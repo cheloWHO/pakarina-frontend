@@ -1,0 +1,157 @@
+import { useEffect, useState } from 'react'
+import { finanzasAPI } from '../../api'
+import { useAuth } from '../../context/AuthContext'
+import { Card, StatCard, Btn, Input, Select, Alert, Spinner } from '../../components/ui'
+import { fmtMoney, fmtFecha } from '../../utils'
+
+const CATEGORIAS = ['nomina','arriendo','servicios','insumos','comision_bancaria','proveedor','marketing','otro']
+const BANCOS = ['produbanco','pichincha','efectivo','payphone']
+
+export default function FinanzasPage() {
+  const { user }   = useAuth()
+  const localId    = user?.local_id
+  const mesActual  = new Date().toISOString().slice(0, 7)
+
+  const [mes,      setMes]     = useState(mesActual)
+  const [resumen,  setResumen] = useState(null)
+  const [gastos,   setGastos]  = useState([])
+  const [loading,  setLoading] = useState(true)
+  const [showForm, setShowForm]= useState(false)
+  const [saving,   setSaving]  = useState(false)
+  const [formMsg,  setFormMsg] = useState(null)
+
+  const [gasto, setGasto] = useState({
+    monto:'', categoria:'arriendo', descripcion:'',
+    fecha: new Date().toISOString().split('T')[0],
+    metodo_pago_salida: 'produbanco',
+  })
+
+  async function load() {
+    setLoading(true)
+    try {
+      const [rRes, gRes] = await Promise.all([
+        finanzasAPI.resumen({ local_id: localId, mes }),
+        finanzasAPI.listarGastos({ local_id: localId, mes }),
+      ])
+      setResumen(rRes.data)
+      setGastos(gRes.data)
+    } catch(e){ console.error(e) }
+    finally { setLoading(false) }
+  }
+
+  useEffect(() => { load() }, [localId, mes])
+
+  async function handleGasto(e) {
+    e.preventDefault()
+    setSaving(true); setFormMsg(null)
+    try {
+      await finanzasAPI.registrarGasto({ ...gasto, local_id: localId })
+      setFormMsg({ type:'ok', text:'Gasto registrado correctamente' })
+      setShowForm(false)
+      setGasto({ monto:'', categoria:'arriendo', descripcion:'', fecha: new Date().toISOString().split('T')[0], metodo_pago_salida:'produbanco' })
+      load()
+    } catch(e) {
+      setFormMsg({ type:'error', text: e.response?.data?.error || 'Error al guardar' })
+    } finally { setSaving(false) }
+  }
+
+  const BANCO_LABEL = { produbanco:'Produbanco', pichincha:'Pichincha', efectivo:'Efectivo', payphone:'Payphone' }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div>
+          <h2 style={{ fontSize:'20px', fontWeight:600 }}>Finanzas</h2>
+        </div>
+        <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
+          <input type="month" value={mes} onChange={e => setMes(e.target.value)}
+            style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }} />
+          <Btn onClick={() => setShowForm(s => !s)}>+ Gasto</Btn>
+        </div>
+      </div>
+
+      {formMsg && <Alert type={formMsg.type === 'ok' ? 'ok' : 'error'}>{formMsg.text}</Alert>}
+
+      {showForm && (
+        <Card>
+          <div style={{ fontWeight:600, marginBottom:'1rem', fontSize:'14px' }}>Registrar gasto</div>
+          <form onSubmit={handleGasto} style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+              <Input label="Monto ($)" type="number" step="0.01" min="0" required
+                value={gasto.monto} onChange={e => setGasto(g => ({...g, monto: e.target.value}))} />
+              <Input label="Fecha" type="date" value={gasto.fecha}
+                onChange={e => setGasto(g => ({...g, fecha: e.target.value}))} />
+              <Select label="Categoría" value={gasto.categoria}
+                onChange={e => setGasto(g => ({...g, categoria: e.target.value}))}>
+                {CATEGORIAS.map(c => <option key={c} value={c}>{c.replace('_',' ')}</option>)}
+              </Select>
+              <Select label="Banco de salida" value={gasto.metodo_pago_salida}
+                onChange={e => setGasto(g => ({...g, metodo_pago_salida: e.target.value}))}>
+                {BANCOS.map(b => <option key={b} value={b}>{BANCO_LABEL[b]}</option>)}
+              </Select>
+              <div style={{ gridColumn:'1/-1' }}>
+                <Input label="Descripción" value={gasto.descripcion}
+                  onChange={e => setGasto(g => ({...g, descripcion: e.target.value}))} placeholder="Ej. Arriendo mayo Villaflora" />
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+              <Btn type="button" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Btn>
+              <Btn type="submit" loading={saving}>Guardar gasto</Btn>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {loading ? <Spinner /> : (
+        <>
+          {/* Stats */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:'12px' }}>
+            <StatCard label="Ingresos netos" value={fmtMoney(resumen?.total_ingresos)} color="green" />
+            <StatCard label="Gastos" value={fmtMoney(resumen?.total_gastos)} color="red" />
+            <StatCard label="Balance" value={fmtMoney(resumen?.balance)} color={resumen?.balance >= 0 ? 'green' : 'red'} />
+          </div>
+
+          {/* Ingresos por banco */}
+          {resumen?.detalle_ingresos?.length > 0 && (
+            <Card>
+              <div style={{ fontWeight:600, marginBottom:'1rem', fontSize:'14px' }}>Ingresos por banco</div>
+              {resumen.detalle_ingresos.map((r, i) => (
+                <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--gray-100)', fontSize:'13px' }}>
+                  <div>
+                    <div style={{ fontWeight:500 }}>{BANCO_LABEL[r.banco_destino] || r.banco_destino}</div>
+                    <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>{r.num_cobros} cobros · {r.metodo_pago}</div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontWeight:600, color:'var(--brand-dark)' }}>{fmtMoney(r.total_neto)}</div>
+                    {parseFloat(r.total_comisiones) > 0 &&
+                      <div style={{ fontSize:'11px', color:'var(--warn)' }}>-{fmtMoney(r.total_comisiones)} com.</div>}
+                  </div>
+                </div>
+              ))}
+            </Card>
+          )}
+
+          {/* Gastos */}
+          <Card>
+            <div style={{ fontWeight:600, marginBottom:'1rem', fontSize:'14px' }}>Gastos del mes</div>
+            {gastos.length === 0
+              ? <div style={{ color:'var(--gray-400)', fontSize:'13px' }}>Sin gastos registrados</div>
+              : gastos.map(g => (
+                <div key={g.id} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--gray-100)', fontSize:'13px' }}>
+                  <div>
+                    <div style={{ fontWeight:500 }}>{g.descripcion || g.categoria}</div>
+                    <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>
+                      {fmtFecha(g.fecha)} · {g.categoria} · {BANCO_LABEL[g.metodo_pago_salida] || '—'}
+                      {g.es_automatico ? ' · automático' : ''}
+                    </div>
+                  </div>
+                  <div style={{ fontWeight:600, color:'var(--danger)' }}>{fmtMoney(g.monto)}</div>
+                </div>
+              ))
+            }
+          </Card>
+        </>
+      )}
+    </div>
+  )
+}
