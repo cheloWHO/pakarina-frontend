@@ -50,9 +50,9 @@ export default function BebesPage() {
     email_representante:'', whatsapp_representante:'', nombre_tutor:'',
     local_id_form: localId || '',
   })
-  const [srvId,   setSrvId]   = useState(null)
-  const [metodo,  setMetodo]  = useState('efectivo')
-  const [ref,         setRef]        = useState('')
+  const [srvId,       setSrvId]       = useState(null)
+  const [metodo,      setMetodo]      = useState('efectivo')
+  const [ref,         setRef]         = useState('')
   const [fechaInicio, setFechaInicio] = useState('')
 
   useEffect(() => {
@@ -73,7 +73,6 @@ export default function BebesPage() {
   const srv = SERVICIOS.find(s => s.id === srvId)
   const comision = metodo === 'tarjeta' && srv ? parseFloat((srv.precio * 0.06).toFixed(2)) : 0
   const neto     = srv ? parseFloat((srv.precio - comision).toFixed(2)) : 0
-
   const localIdFinal = esGlobal ? parseInt(bebe.local_id_form) : localId
 
   async function handleRegistrar() {
@@ -119,7 +118,7 @@ export default function BebesPage() {
       email_representante:'', whatsapp_representante:'', nombre_tutor:'',
       local_id_form: localId || '',
     })
-    setSrvId(null); setMetodo('efectivo'); setRef(''); setPaso(0)
+    setSrvId(null); setMetodo('efectivo'); setRef(''); setFechaInicio(''); setPaso(0)
     setSuccess(null); setFormErr(''); setShowForm(false)
   }
 
@@ -283,7 +282,18 @@ export default function BebesPage() {
                       </div>
                     </>}
                   </div>
-                  <Input label="Referencia (opcional)" placeholder="TRF-001" value={ref} onChange={e => setRef(e.target.value)} />
+                  <Input
+                    label="Fecha de inicio del plan (opcional — por defecto hoy)"
+                    type="date"
+                    value={fechaInicio}
+                    onChange={e => setFechaInicio(e.target.value)}
+                  />
+                  <Input
+                    label="Referencia de pago (opcional)"
+                    placeholder="TRF-001"
+                    value={ref}
+                    onChange={e => setRef(e.target.value)}
+                  />
                   <div style={{ display:'flex', justifyContent:'space-between' }}>
                     <Btn variant="ghost" onClick={() => setPaso(1)}>← Atrás</Btn>
                     <Btn onClick={() => setPaso(3)}>Revisar →</Btn>
@@ -295,15 +305,16 @@ export default function BebesPage() {
                 <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
                   <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px', display:'flex', flexDirection:'column', gap:'6px' }}>
                     {[
-                      ['Bebé',      bebe.nombre_completo],
-                      ['Tutor/a',   bebe.nombre_tutor],
-                      ['WhatsApp',  bebe.whatsapp_representante],
-                      ['Sucursal',  esGlobal ? LOCALES.find(l => l.id === parseInt(bebe.local_id_form))?.nombre : (localId === 1 ? 'Villaflora' : 'Florida')],
-                      ['Servicio',  srv?.nombre],
-                      ['Clases',    srv?.clases + ' clases'],
-                      ['Vigencia',  srv?.vigencia ? srv.vigencia + ' días' : 'Sin vigencia'],
-                      ['Método',    METODO_LABEL[metodo]],
-                      ['Cobrado',   '$' + srv?.precio.toFixed(2)],
+                      ['Bebé',        bebe.nombre_completo],
+                      ['Tutor/a',     bebe.nombre_tutor],
+                      ['WhatsApp',    bebe.whatsapp_representante],
+                      ['Sucursal',    esGlobal ? LOCALES.find(l => l.id === parseInt(bebe.local_id_form))?.nombre : (localId === 1 ? 'Villaflora' : 'Florida')],
+                      ['Servicio',    srv?.nombre],
+                      ['Clases',      srv?.clases + ' clases'],
+                      ['Vigencia',    srv?.vigencia ? srv.vigencia + ' días' : 'Sin vigencia'],
+                      ['Inicio plan', fechaInicio || 'Hoy'],
+                      ['Método',      METODO_LABEL[metodo]],
+                      ['Cobrado',     '$' + srv?.precio.toFixed(2)],
                     ].map(([k, v]) => (
                       <div key={k} style={{ display:'flex', justifyContent:'space-between', fontSize:'13px' }}>
                         <span style={{ color:'var(--gray-400)' }}>{k}</span>
