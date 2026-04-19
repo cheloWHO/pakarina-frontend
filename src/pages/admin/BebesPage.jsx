@@ -26,9 +26,16 @@ const BANCO_POR_METODO = {
 
 const PASO_LABELS = ['Bebé', 'Servicio', 'Pago', 'Confirmar']
 
+const LOCALES = [
+  { id: 1, nombre: 'Villaflora (Sur)' },
+  { id: 2, nombre: 'Florida (Norte)' },
+]
+
 export default function BebesPage() {
   const { user }   = useAuth()
+  const esGlobal   = !user?.local_id
   const localId    = user?.local_id
+
   const [bebes,    setBebes]    = useState([])
   const [grupos,   setGrupos]   = useState([])
   const [loading,  setLoading]  = useState(true)
@@ -38,10 +45,10 @@ export default function BebesPage() {
   const [success,  setSuccess]  = useState(null)
   const [formErr,  setFormErr]  = useState('')
 
-  // Form state
   const [bebe, setBebe] = useState({
     nombre_completo:'', fecha_nacimiento:'', grupo_id:'',
     email_representante:'', whatsapp_representante:'', nombre_tutor:'',
+    local_id_form: localId || '',
   })
   const [srvId,   setSrvId]   = useState(null)
   const [metodo,  setMetodo]  = useState('efectivo')
@@ -66,22 +73,26 @@ export default function BebesPage() {
   const comision = metodo === 'tarjeta' && srv ? parseFloat((srv.precio * 0.06).toFixed(2)) : 0
   const neto     = srv ? parseFloat((srv.precio - comision).toFixed(2)) : 0
 
+  const localIdFinal = esGlobal ? parseInt(bebe.local_id_form) : localId
+
   async function handleRegistrar() {
     setSaving(true)
     setFormErr('')
     try {
-      // 1. Crear bebé
-      const bRes = await bebesAPI.crear({ ...bebe, local_id: localId, grupo_id: bebe.grupo_id || null })
+      const bRes = await bebesAPI.crear({
+        ...bebe,
+        local_id: localIdFinal,
+        grupo_id: bebe.grupo_id || null,
+      })
       const bebeId = bRes.data.bebe_id
 
-      // 2. Registrar pago + plan
       await planesAPI.registrarPago({
-        local_id:     localId,
-        bebe_id:      bebeId,
-        servicio_id:  srvId,
-        metodo_pago:  metodo,
+        local_id:      localIdFinal,
+        bebe_id:       bebeId,
+        servicio_id:   srvId,
+        metodo_pago:   metodo,
         banco_destino: BANCO_POR_METODO[metodo],
-        referencia:   ref || null,
+        referencia:    ref || null,
       })
 
       setSuccess({
@@ -91,7 +102,6 @@ export default function BebesPage() {
         servicio: srv.nombre,
       })
 
-      // Refrescar lista
       const fresh = await bebesAPI.listar(localId)
       setBebes(fresh.data)
     } catch (e) {
@@ -102,10 +112,18 @@ export default function BebesPage() {
   }
 
   function resetForm() {
-    setBebe({ nombre_completo:'',fecha_nacimiento:'',grupo_id:'',email_representante:'',whatsapp_representante:'',nombre_tutor:'' })
+    setBebe({
+      nombre_completo:'', fecha_nacimiento:'', grupo_id:'',
+      email_representante:'', whatsapp_representante:'', nombre_tutor:'',
+      local_id_form: localId || '',
+    })
     setSrvId(null); setMetodo('efectivo'); setRef(''); setPaso(0)
     setSuccess(null); setFormErr(''); setShowForm(false)
   }
+
+  const paso0Valido = bebe.nombre_completo && bebe.fecha_nacimiento &&
+    bebe.nombre_tutor && bebe.whatsapp_representante && bebe.email_representante &&
+    (!esGlobal || bebe.local_id_form)
 
   if (loading) return <Spinner />
 
@@ -114,12 +132,11 @@ export default function BebesPage() {
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div>
           <h2 style={{ fontSize:'20px', fontWeight:600 }}>Bebés</h2>
-          <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{bebes.length} registrados en este local</p>
+          <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{bebes.length} registrados</p>
         </div>
         <Btn onClick={() => { setShowForm(true); setSuccess(null) }}>+ Registrar bebé</Btn>
       </div>
 
-      {/* Formulario modal-style */}
       {showForm && (
         <Card>
           {success ? (
@@ -138,7 +155,6 @@ export default function BebesPage() {
             </div>
           ) : (
             <>
-              {/* Steps */}
               <div style={{ display:'flex', gap:'0', marginBottom:'1.5rem' }}>
                 {PASO_LABELS.map((l, i) => (
                   <div key={i} style={{ flex:1, textAlign:'center' }}>
@@ -154,13 +170,13 @@ export default function BebesPage() {
                 ))}
               </div>
 
-              {/* Paso 0: Datos del bebé */}
               {paso === 0 && (
                 <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
                     <div style={{ gridColumn:'1/-1' }}>
                       <Input label="Nombre completo del bebé" value={bebe.nombre_completo}
-                        onChange={e => setBebe(b => ({...b, nombre_completo: e.target.value}))} placeholder="Valentina Juárez" required />
+                        onChange={e => setBebe(b => ({...b, nombre_completo: e.target.value}))}
+                        placeholder="Valentina Juárez" required />
                     </div>
                     <Input label="Fecha de nacimiento" type="date" value={bebe.fecha_nacimiento}
                       onChange={e => setBebe(b => ({...b, fecha_nacimiento: e.target.value}))} required />
@@ -172,8 +188,17 @@ export default function BebesPage() {
                           : <span style={{ color:'var(--gray-400)', fontSize:'13px' }}>— meses</span>}
                       </div>
                     </div>
+                    {esGlobal && (
+                      <div style={{ gridColumn:'1/-1' }}>
+                        <Select label="Sucursal *" value={bebe.local_id_form}
+                          onChange={e => setBebe(b => ({...b, local_id_form: e.target.value}))} required>
+                          <option value="">Seleccionar sucursal...</option>
+                          {LOCALES.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+                        </Select>
+                      </div>
+                    )}
                     <div style={{ gridColumn:'1/-1' }}>
-                      <Select label="Grupo (opcional — se puede asignar después)"
+                      <Select label="Grupo (opcional)"
                         value={bebe.grupo_id} onChange={e => setBebe(b => ({...b, grupo_id: e.target.value}))}>
                         <option value="">Sin asignar</option>
                         {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
@@ -183,24 +208,23 @@ export default function BebesPage() {
                   <hr style={{ border:'none', borderTop:'1px solid var(--gray-100)' }} />
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
                     <Input label="Nombre del tutor/a" value={bebe.nombre_tutor}
-                      onChange={e => setBebe(b => ({...b, nombre_tutor: e.target.value}))} placeholder="María Gómez" required />
+                      onChange={e => setBebe(b => ({...b, nombre_tutor: e.target.value}))}
+                      placeholder="María Gómez" required />
                     <Input label="WhatsApp" value={bebe.whatsapp_representante}
-                      onChange={e => setBebe(b => ({...b, whatsapp_representante: e.target.value}))} placeholder="+593 9..." required />
+                      onChange={e => setBebe(b => ({...b, whatsapp_representante: e.target.value}))}
+                      placeholder="+593 9..." required />
                     <div style={{ gridColumn:'1/-1' }}>
                       <Input label="Email" type="email" value={bebe.email_representante}
-                        onChange={e => setBebe(b => ({...b, email_representante: e.target.value}))} placeholder="mama@email.com" required />
+                        onChange={e => setBebe(b => ({...b, email_representante: e.target.value}))}
+                        placeholder="mama@email.com" required />
                     </div>
                   </div>
                   <div style={{ display:'flex', justifyContent:'flex-end' }}>
-                    <Btn onClick={() => setPaso(1)}
-                      disabled={!bebe.nombre_completo || !bebe.fecha_nacimiento || !bebe.nombre_tutor || !bebe.whatsapp_representante || !bebe.email_representante}>
-                      Siguiente →
-                    </Btn>
+                    <Btn onClick={() => setPaso(1)} disabled={!paso0Valido}>Siguiente →</Btn>
                   </div>
                 </div>
               )}
 
-              {/* Paso 1: Servicio */}
               {paso === 1 && (
                 <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px' }}>
@@ -228,7 +252,6 @@ export default function BebesPage() {
                 </div>
               )}
 
-              {/* Paso 2: Pago */}
               {paso === 2 && (
                 <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:'8px' }}>
@@ -266,7 +289,6 @@ export default function BebesPage() {
                 </div>
               )}
 
-              {/* Paso 3: Confirmar */}
               {paso === 3 && (
                 <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
                   <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px', display:'flex', flexDirection:'column', gap:'6px' }}>
@@ -274,6 +296,7 @@ export default function BebesPage() {
                       ['Bebé',      bebe.nombre_completo],
                       ['Tutor/a',   bebe.nombre_tutor],
                       ['WhatsApp',  bebe.whatsapp_representante],
+                      ['Sucursal',  esGlobal ? LOCALES.find(l => l.id === parseInt(bebe.local_id_form))?.nombre : (localId === 1 ? 'Villaflora' : 'Florida')],
                       ['Servicio',  srv?.nombre],
                       ['Clases',    srv?.clases + ' clases'],
                       ['Vigencia',  srv?.vigencia ? srv.vigencia + ' días' : 'Sin vigencia'],
@@ -298,9 +321,8 @@ export default function BebesPage() {
         </Card>
       )}
 
-      {/* Lista de bebés */}
       <Card>
-        {bebes.length === 0 ? <Empty message="Sin bebés registrados en este local" /> : (
+        {bebes.length === 0 ? <Empty message="Sin bebés registrados" /> : (
           bebes.map(b => (
             <div key={b.id} style={{
               display:'flex', justifyContent:'space-between', alignItems:'center',
