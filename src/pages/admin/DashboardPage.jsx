@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext'
 import { Card, StatCard, Badge, Spinner, Btn } from '../../components/ui'
 import { fmtFecha, fmtMoney, diasParaVencer } from '../../utils'
 
+const EMAILS_FINANZAS = ['mjuarez@pakarinacenter.com', 'ggordon@pakarinacenter.com']
+
 export default function DashboardPage() {
   const { user } = useAuth()
   const navigate  = useNavigate()
@@ -13,17 +15,17 @@ export default function DashboardPage() {
   const [loading,  setLoading]  = useState(true)
 
   const localId = user?.local_id
-  const mesActual = new Date().toISOString().slice(0, 7) // YYYY-MM
+  const mesActual = new Date().toISOString().slice(0, 7)
+  const verFinanzas = EMAILS_FINANZAS.includes(user?.email)
 
   useEffect(() => {
     async function load() {
       try {
-        const [pRes, fRes] = await Promise.all([
-          planesAPI.listar({ local_id: localId, estado: 'activo' }),
-          finanzasAPI.resumen({ local_id: localId, mes: mesActual }),
-        ])
+        const promises = [planesAPI.listar({ local_id: localId, estado: 'activo' })]
+        if (verFinanzas) promises.push(finanzasAPI.resumen({ local_id: localId, mes: mesActual }))
+        const [pRes, fRes] = await Promise.all(promises)
         setPlanes(pRes.data)
-        setResumen(fRes.data)
+        if (fRes) setResumen(fRes.data)
       } catch (e) {
         console.error(e)
       } finally {
@@ -31,7 +33,7 @@ export default function DashboardPage() {
       }
     }
     load()
-  }, [localId])
+  }, [localId, verFinanzas])
 
   if (loading) return <Spinner />
 
@@ -40,7 +42,6 @@ export default function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '900px' }}>
-      {/* Header */}
       <div>
         <h2 style={{ fontSize: '20px', fontWeight: 600 }}>Buenos días</h2>
         <p style={{ color: 'var(--gray-400)', fontSize: '13px', marginTop: '2px' }}>
@@ -49,7 +50,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Alertas de vencimiento */}
       {alertas.length > 0 && (
         <Card style={{ borderLeft: '4px solid var(--warn)', borderRadius: 'var(--radius-md)' }}>
           <div style={{ fontWeight: 600, marginBottom: '10px', color: 'var(--warn)', fontSize: '13px' }}>
@@ -79,37 +79,21 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Stats del mes */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
-        <StatCard
-          label="Ingresos netos (mes)"
-          value={fmtMoney(resumen?.total_ingresos)}
-          color="green"
-        />
-        <StatCard
-          label="Gastos (mes)"
-          value={fmtMoney(resumen?.total_gastos)}
-          color="red"
-        />
-        <StatCard
-          label="Balance del mes"
-          value={fmtMoney(resumen?.balance)}
-          color={resumen?.balance >= 0 ? 'green' : 'red'}
-        />
-        <StatCard
-          label="Planes activos"
-          value={planesActivos}
-          sub="en este local"
-        />
+        {verFinanzas && (
+          <>
+            <StatCard label="Ingresos netos (mes)" value={fmtMoney(resumen?.total_ingresos)} color="green" />
+            <StatCard label="Gastos (mes)" value={fmtMoney(resumen?.total_gastos)} color="red" />
+            <StatCard label="Balance del mes" value={fmtMoney(resumen?.balance)} color={resumen?.balance >= 0 ? 'green' : 'red'} />
+          </>
+        )}
+        <StatCard label="Planes activos" value={planesActivos} sub="en este local" />
       </div>
 
-      {/* Planes activos recientes */}
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ fontSize: '14px', fontWeight: 600 }}>Planes activos</h3>
-          <Btn size="sm" variant="ghost" onClick={() => navigate('/admin/bebes')}>
-            Ver bebés →
-          </Btn>
+          <Btn size="sm" variant="ghost" onClick={() => navigate('/admin/bebes')}>Ver bebés →</Btn>
         </div>
         {planes.length === 0 ? (
           <p style={{ color: 'var(--gray-400)', fontSize: '13px' }}>Sin planes activos</p>
