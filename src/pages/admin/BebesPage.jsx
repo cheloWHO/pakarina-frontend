@@ -94,6 +94,7 @@ export default function BebesPage() {
         metodo_pago:   metodo,
         banco_destino: BANCO_POR_METODO[metodo],
         referencia:    ref || null,
+        fecha_inicio:  fechaInicio || null,
       })
 
       setSuccess({
