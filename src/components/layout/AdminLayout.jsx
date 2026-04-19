@@ -2,12 +2,14 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const NAV = [
-  { to: '/admin',           label: 'Inicio',     icon: '◈' },
-  { to: '/admin/bebes',     label: 'Bebés',      icon: '◉' },
-  { to: '/admin/clases',    label: 'Clases',     icon: '◎' },
-  { to: '/admin/finanzas',  label: 'Finanzas',   icon: '◇' },
-  { to: '/admin/inventario',label: 'Inventario', icon: '◫' },
+  { to: '/admin',            label: 'Inicio',     icon: '◈' },
+  { to: '/admin/bebes',      label: 'Bebés',      icon: '◉' },
+  { to: '/admin/clases',     label: 'Clases',     icon: '◎' },
+  { to: '/admin/finanzas',   label: 'Finanzas',   icon: '◇', soloFinanzas: true },
+  { to: '/admin/inventario', label: 'Inventario', icon: '◫' },
 ]
+
+const EMAILS_FINANZAS = ['mjuarez@pakarinacenter.com', 'ggordon@pakarinacenter.com']
 
 export default function AdminLayout() {
   const { user, logout } = useAuth()
@@ -18,16 +20,18 @@ export default function AdminLayout() {
     navigate('/login')
   }
 
+  const navFiltrado = NAV.filter(item =>
+    !item.soloFinanzas || EMAILS_FINANZAS.includes(user?.email)
+  )
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Sidebar */}
       <aside style={{
         width: '220px', flexShrink: 0,
         background: '#fff', borderRight: '1px solid var(--gray-100)',
         display: 'flex', flexDirection: 'column',
         padding: '1.5rem 0',
       }}>
-        {/* Logo */}
         <div style={{ padding: '0 1.25rem 1.5rem', borderBottom: '1px solid var(--gray-100)' }}>
           <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--brand-dark)' }}>
             Pakarina Center
@@ -36,10 +40,8 @@ export default function AdminLayout() {
             {user?.local_id ? (user.local_id === 1 ? 'Villaflora' : 'Florida') : 'Global'}
           </div>
         </div>
-
-        {/* Nav */}
         <nav style={{ padding: '1rem 0.75rem', flex: 1 }}>
-          {NAV.map(item => (
+          {navFiltrado.map(item => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -58,8 +60,6 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-
-        {/* User footer */}
         <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--gray-100)' }}>
           <div style={{ fontSize: '12px', fontWeight: 500, marginBottom: '2px' }}>{user?.nombre}</div>
           <div style={{ fontSize: '11px', color: 'var(--gray-400)', marginBottom: '8px' }}>Administrador</div>
@@ -76,8 +76,6 @@ export default function AdminLayout() {
           </button>
         </div>
       </aside>
-
-      {/* Main content */}
       <main style={{ flex: 1, overflow: 'auto', padding: '2rem' }}>
         <Outlet />
       </main>
