@@ -52,7 +52,8 @@ export default function BebesPage() {
   })
   const [srvId,   setSrvId]   = useState(null)
   const [metodo,  setMetodo]  = useState('efectivo')
-  const [ref,     setRef]     = useState('')
+  const [ref,         setRef]        = useState('')
+  const [fechaInicio, setFechaInicio] = useState('')
 
   useEffect(() => {
     async function load() {
