@@ -20,6 +20,7 @@ export const planesAPI = {
   listar:        (params) => api.get('/api/planes', { params }),
   obtener:       (id)     => api.get(`/api/planes/${id}`),
   registrarPago: (data)   => api.post('/api/planes', data),
+  agregarClases: (id, clases_extra) => api.patch(`/api/planes/${id}/agregar-clases`, { clases_extra }),
 }
 
 // CLASES
