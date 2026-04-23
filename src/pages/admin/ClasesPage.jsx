@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { planesAPI, clasesAPI } from '../../api'
 import { useAuth } from '../../context/AuthContext'
-import { Card, Btn, Badge, Spinner, Alert, Empty } from '../../components/ui'
+import { Card, Btn, Badge, Spinner, Alert, Empty, Input } from '../../components/ui'
 import { fmtFecha, diasParaVencer, TIPO_CLASE_LABEL } from '../../utils'
 
 const TIPOS = ['piso', 'hidroterapia', 'no_asistio']
@@ -11,9 +11,12 @@ export default function ClasesPage() {
   const localId   = user?.local_id
   const [planes,  setPlanes]  = useState([])
   const [loading, setLoading] = useState(true)
-  const [marking, setMarking] = useState(null)   // plan_id que está siendo marcado
-  const [msg,     setMsg]     = useState(null)   // { text, type }
-  const [tipoSel, setTipoSel] = useState({})     // { [plan_id]: tipo_clase }
+  const [marking, setMarking] = useState(null)
+  const [msg,     setMsg]     = useState(null)
+  const [tipoSel, setTipoSel] = useState({})
+  const [fechaSel, setFechaSel] = useState({})
+  const [notaSel,  setNotaSel]  = useState({})
+  const [showExtra, setShowExtra] = useState({})
 
   async function loadPlanes() {
     try {
@@ -26,20 +29,28 @@ export default function ClasesPage() {
   useEffect(() => { loadPlanes() }, [localId])
 
   async function marcar(plan) {
-    const tipo = tipoSel[plan.plan_id] || 'piso'
+    const tipo  = tipoSel[plan.plan_id]  || 'piso'
+    const fecha = fechaSel[plan.plan_id] || ''
+    const nota  = notaSel[plan.plan_id]  || ''
     setMarking(plan.plan_id)
     setMsg(null)
     try {
       const res = await clasesAPI.marcar({
-        plan_id:    plan.plan_id,
-        tipo_clase: tipo,
-        estado:     tipo === 'no_asistio' ? 'no_asistio' : 'tomada',
+        plan_id:       plan.plan_id,
+        tipo_clase:    tipo,
+        estado:        tipo === 'no_asistio' ? 'no_asistio' : 'tomada',
+        fecha:         fecha || undefined,
+        observaciones: nota  || undefined,
       })
       const d = res.data
       setMsg({
         type: 'ok',
         text: `Clase marcada. Quedan ${d.clases_restantes} clases.${d.estado_plan === 'completado' ? ' ¡Plan completado!' : ''}`,
       })
+      // Limpiar campos de este plan
+      setFechaSel(s => ({ ...s, [plan.plan_id]: '' }))
+      setNotaSel(s  => ({ ...s, [plan.plan_id]: '' }))
+      setShowExtra(s => ({ ...s, [plan.plan_id]: false }))
       await loadPlanes()
     } catch (e) {
       setMsg({ type: 'error', text: e.response?.data?.error || 'Error al marcar clase' })
@@ -64,9 +75,12 @@ export default function ClasesPage() {
       {planes.length === 0
         ? <Empty message="No hay planes activos en este local" />
         : planes.map(p => {
-          const dias    = diasParaVencer(p.fecha_vencimiento)
-          const tipo    = tipoSel[p.plan_id] || 'piso'
-          const pct     = Math.round((p.clases_usadas / p.clases_total) * 100)
+          const dias  = diasParaVencer(p.fecha_vencimiento)
+          const tipo  = tipoSel[p.plan_id]   || 'piso'
+          const fecha = fechaSel[p.plan_id]  || ''
+          const nota  = notaSel[p.plan_id]   || ''
+          const extra = showExtra[p.plan_id] || false
+          const pct   = Math.round((p.clases_usadas / p.clases_total) * 100)
 
           return (
             <Card key={p.plan_id}>
@@ -107,7 +121,11 @@ export default function ClasesPage() {
                     {TIPO_CLASE_LABEL[t]}
                   </div>
                 ))}
-                <div style={{ marginLeft:'auto' }}>
+                <div style={{ marginLeft:'auto', display:'flex', gap:'8px', alignItems:'center' }}>
+                  <Btn size="sm" variant="ghost"
+                    onClick={() => setShowExtra(s => ({...s, [p.plan_id]: !extra}))}>
+                    {extra ? '▲ Menos' : '▼ Fecha / Nota'}
+                  </Btn>
                   <Btn
                     onClick={() => marcar(p)}
                     loading={marking === p.plan_id}
@@ -118,6 +136,35 @@ export default function ClasesPage() {
                   </Btn>
                 </div>
               </div>
+
+              {/* Fecha y nota — colapsables */}
+              {extra && (
+                <div style={{ marginTop:'12px', display:'flex', flexDirection:'column', gap:'8px', padding:'12px', background:'var(--gray-100)', borderRadius:'var(--radius-sm)' }}>
+                  <Input
+                    label="Fecha de la clase (opcional — por defecto hoy)"
+                    type="date"
+                    value={fecha}
+                    onChange={e => setFechaSel(s => ({...s, [p.plan_id]: e.target.value}))}
+                  />
+                  <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+                    <label style={{ fontSize:'12px', color:'var(--gray-600)', fontWeight:500 }}>
+                      Nota interna (solo admins — no visible para papás)
+                    </label>
+                    <textarea
+                      value={nota}
+                      onChange={e => setNotaSel(s => ({...s, [p.plan_id]: e.target.value}))}
+                      placeholder="Ej: Buen agarre, más relajada que la semana pasada..."
+                      rows={3}
+                      style={{
+                        width:'100%', padding:'8px 10px', fontSize:'13px',
+                        border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
+                        resize:'vertical', fontFamily:'inherit', outline:'none',
+                        background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {dias !== null && (
                 <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'8px' }}>
