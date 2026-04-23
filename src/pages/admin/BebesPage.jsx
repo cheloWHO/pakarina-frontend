@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { bebesAPI, planesAPI, gruposAPI } from '../../api'
+import { bebesAPI, planesAPI, gruposAPI, clasesAPI } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import { Card, Btn, Input, Select, Badge, Spinner, Alert, Empty } from '../../components/ui'
-import { fmtFecha, edadMeses, METODO_LABEL } from '../../utils'
+import { fmtFecha, edadMeses, METODO_LABEL, TIPO_CLASE_LABEL } from '../../utils'
 
 const SERVICIOS = [
   { id:1, nombre:'Clase Post Vacuna',  precio:10,  clases:1,  vigencia:0 },
@@ -37,6 +37,7 @@ const LOCALES = [
 function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [bebe,        setBebe]        = useState({ ...bebeInicial })
   const [planes,      setPlanes]      = useState([])
+  const [clases,      setClases]      = useState([])
   const [saving,      setSaving]      = useState(false)
   const [msg,         setMsg]         = useState(null)
   const [clasesExtra, setClasesExtra] = useState('')
@@ -45,10 +46,16 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [planIdFecha, setPlanIdFecha] = useState(null)
   const [nuevaFecha,  setNuevaFecha]  = useState('')
   const [savingFecha, setSavingFecha] = useState(false)
+  const [editandoNota,  setEditandoNota]  = useState(null)
+  const [textoNota,     setTextoNota]     = useState('')
+  const [savingNota,    setSavingNota]    = useState(false)
 
   useEffect(() => {
     planesAPI.listar({ bebe_id: bebeInicial.id })
       .then(r => setPlanes(r.data))
+      .catch(console.error)
+    clasesAPI.listar({ bebe_id: bebeInicial.id })
+      .then(r => setClases(r.data))
       .catch(console.error)
   }, [bebeInicial.id])
 
@@ -106,6 +113,23 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       setMsg({ type: 'error', text: e.response?.data?.error || 'Error al agregar clases' })
     } finally {
       setSavingExtra(false)
+    }
+  }
+
+  async function handleGuardarNota(claseId) {
+    setSavingNota(true)
+    setMsg(null)
+    try {
+      await clasesAPI.editarNota(claseId, textoNota)
+      const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id })
+      setClases(fresh.data)
+      setEditandoNota(null)
+      setTextoNota('')
+      setMsg({ type: 'ok', text: 'Nota guardada correctamente' })
+    } catch (e) {
+      setMsg({ type: 'error', text: e.response?.data?.error || 'Error al guardar nota' })
+    } finally {
+      setSavingNota(false)
     }
   }
 
@@ -170,8 +194,6 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                   <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>
                     Inicio: {fmtFecha(p.fecha_inicio)} · Vence: {p.fecha_vencimiento ? fmtFecha(p.fecha_vencimiento) : 'Sin vigencia'}
                   </div>
-
-                  {/* Editar fecha de inicio */}
                   {p.estado === 'activo' && (
                     planIdFecha === p.id ? (
                       <div style={{ display:'flex', gap:'8px', alignItems:'flex-end', marginTop:'8px' }}>
@@ -193,14 +215,11 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 </div>
                 <Badge color={p.estado === 'activo' ? 'green' : 'gray'}>{p.estado}</Badge>
               </div>
-
               <div style={{ display:'flex', gap:'12px', fontSize:'13px', marginBottom:'10px' }}>
                 <span>Total: <strong>{p.clases_total}</strong></span>
                 <span>Usadas: <strong>{p.clases_usadas}</strong></span>
                 <span>Restantes: <strong style={{ color:'var(--brand-dark)' }}>{p.clases_restantes}</strong></span>
               </div>
-
-              {/* Agregar clases extra */}
               {p.estado === 'activo' && (
                 planIdExtra === p.id ? (
                   <div style={{ display:'flex', gap:'8px', alignItems:'flex-end' }}>
@@ -221,6 +240,77 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
               )}
             </div>
           ))
+        )}
+      </Card>
+
+      {/* Historial de clases */}
+      <Card>
+        <div style={{ fontWeight:600, fontSize:'14px', marginBottom:'1rem' }}>
+          Historial de clases
+          <span style={{ fontWeight:400, fontSize:'12px', color:'var(--gray-400)', marginLeft:'8px' }}>
+            solo visible para admins
+          </span>
+        </div>
+        {clases.length === 0 ? (
+          <Empty message="Sin clases registradas" />
+        ) : (
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
+              <thead>
+                <tr style={{ borderBottom:'2px solid var(--gray-100)' }}>
+                  <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Fecha</th>
+                  <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Tipo</th>
+                  <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Registrado por</th>
+                  <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Nota interna</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clases.map(c => (
+                  <tr key={c.id} style={{ borderBottom:'1px solid var(--gray-100)' }}>
+                    <td style={{ padding:'8px', whiteSpace:'nowrap' }}>{fmtFecha(c.fecha)}</td>
+                    <td style={{ padding:'8px' }}>
+                      <Badge color={c.tipo_clase === 'no_asistio' ? 'gray' : 'green'}>
+                        {TIPO_CLASE_LABEL[c.tipo_clase] || c.tipo_clase}
+                      </Badge>
+                    </td>
+                    <td style={{ padding:'8px', color:'var(--gray-400)', fontSize:'12px' }}>{c.registrado_por}</td>
+                    <td style={{ padding:'8px', minWidth:'200px' }}>
+                      {editandoNota === c.id ? (
+                        <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                          <textarea
+                            value={textoNota}
+                            onChange={e => setTextoNota(e.target.value)}
+                            rows={3}
+                            style={{
+                              width:'100%', padding:'6px 8px', fontSize:'12px',
+                              border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
+                              resize:'vertical', fontFamily:'inherit', outline:'none',
+                              background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
+                            }}
+                          />
+                          <div style={{ display:'flex', gap:'6px' }}>
+                            <Btn size="sm" onClick={() => handleGuardarNota(c.id)} loading={savingNota}>Guardar</Btn>
+                            <Btn size="sm" variant="ghost" onClick={() => { setEditandoNota(null); setTextoNota('') }}>Cancelar</Btn>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display:'flex', alignItems:'flex-start', gap:'8px' }}>
+                          <span style={{ color: c.observaciones ? 'var(--gray-900)' : 'var(--gray-300)', fontSize:'12px', flex:1 }}>
+                            {c.observaciones || 'Sin nota'}
+                          </span>
+                          <Btn size="sm" variant="ghost"
+                            onClick={() => { setEditandoNota(c.id); setTextoNota(c.observaciones || '') }}
+                            style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap' }}>
+                            ✏️
+                          </Btn>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
     </div>
@@ -319,7 +409,6 @@ export default function BebesPage() {
 
   if (loading) return <Spinner />
 
-  // Pantalla de detalle
   if (bebeDetalle) {
     return (
       <BebeDetalle
