@@ -63,13 +63,14 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     setSaving(true)
     setMsg(null)
     try {
-      await bebesAPI.actualizar(bebe.id, {
-        nombre_completo:        bebe.nombre_completo,
-        fecha_nacimiento:       bebe.fecha_nacimiento,
-        nombre_tutor:           bebe.nombre_tutor,
-        whatsapp_representante: bebe.whatsapp_representante,
-        email_representante:    bebe.email_representante,
-        grupo_id:               bebe.grupo_id || null,
+        await bebesAPI.actualizar(bebe.id, {
+          nombre_completo:        bebe.nombre_completo,
+          fecha_nacimiento:       bebe.fecha_nacimiento,
+          nombre_tutor:           bebe.nombre_tutor,
+          whatsapp_representante: bebe.whatsapp_representante,
+          email_representante:    bebe.email_representante,
+          grupo_id:               bebe.grupo_id || null,
+          local_id:               bebe.local_id,
       })
       setMsg({ type: 'ok', text: 'Datos actualizados correctamente' })
       onSaved()
