@@ -142,26 +142,51 @@ export default function FinanzasPage() {
             <StatCard label="Balance" value={fmtMoney(resumen?.balance)} color={resumen?.balance >= 0 ? 'green' : 'red'} />
           </div>
 
-          {/* Ingresos por banco */}
-          {resumen?.detalle_ingresos?.length > 0 && (
-            <Card>
-              <div style={{ fontWeight:600, marginBottom:'1rem', fontSize:'14px' }}>Ingresos por banco</div>
-              {resumen.detalle_ingresos.map((r, i) => (
-                <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--gray-100)', fontSize:'13px' }}>
-                  <div>
-                    <div style={{ fontWeight:500 }}>{BANCO_LABEL[r.banco_destino] || r.banco_destino}</div>
-                    <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>{r.num_cobros} cobros · {r.metodo_pago}</div>
-                  </div>
-                  <div style={{ textAlign:'right' }}>
-                    <div style={{ fontWeight:600, color:'var(--brand-dark)' }}>{fmtMoney(r.total_neto)}</div>
-                    {parseFloat(r.total_comisiones) > 0 &&
-                      <div style={{ fontSize:'11px', color:'var(--warn)' }}>-{fmtMoney(r.total_comisiones)} com.</div>}
-                  </div>
-                </div>
-              ))}
-            </Card>
-          )}
+        {/* Ingresos por planes */}
+{resumen?.detalle_planes?.length > 0 && (
+  <Card>
+    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
+      <div style={{ fontWeight:600, fontSize:'14px' }}>Ingresos por planes</div>
+      <div style={{ fontWeight:600, fontSize:'13px', color:'var(--brand-dark)' }}>{fmtMoney(resumen.total_planes)}</div>
+    </div>
+    {resumen.detalle_planes.map((r, i) => (
+      <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--gray-100)', fontSize:'13px' }}>
+        <div>
+          <div style={{ fontWeight:500 }}>{BANCO_LABEL[r.banco_destino] || r.banco_destino}</div>
+          <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>{r.num_cobros} cobros · {r.metodo_pago}</div>
+        </div>
+        <div style={{ textAlign:'right' }}>
+          <div style={{ fontWeight:600, color:'var(--brand-dark)' }}>{fmtMoney(r.total_neto)}</div>
+          {parseFloat(r.total_comisiones) > 0 &&
+            <div style={{ fontSize:'11px', color:'var(--warn)' }}>-{fmtMoney(r.total_comisiones)} com.</div>}
+        </div>
+      </div>
+    ))}
+  </Card>
+)}
 
+{/* Ingresos por productos */}
+{resumen?.detalle_productos?.length > 0 && (
+  <Card>
+    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
+      <div style={{ fontWeight:600, fontSize:'14px' }}>Ingresos por productos</div>
+      <div style={{ fontWeight:600, fontSize:'13px', color:'var(--brand-dark)' }}>{fmtMoney(resumen.total_productos)}</div>
+    </div>
+    {resumen.detalle_productos.map((r, i) => (
+      <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--gray-100)', fontSize:'13px' }}>
+        <div>
+          <div style={{ fontWeight:500 }}>{METODO_LABEL[r.metodo_pago] || r.metodo_pago}</div>
+          <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>{r.num_ventas} ventas</div>
+        </div>
+        <div style={{ textAlign:'right' }}>
+          <div style={{ fontWeight:600, color:'var(--brand-dark)' }}>{fmtMoney(r.total_neto)}</div>
+          {parseFloat(r.total_comisiones) > 0 &&
+            <div style={{ fontSize:'11px', color:'var(--warn)' }}>-{fmtMoney(r.total_comisiones)} com.</div>}
+        </div>
+      </div>
+    ))}
+  </Card>
+)}
           {/* Gastos */}
           <Card>
             <div style={{ fontWeight:600, marginBottom:'1rem', fontSize:'14px' }}>Gastos del mes</div>
