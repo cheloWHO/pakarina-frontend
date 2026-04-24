@@ -242,14 +242,13 @@ export default function InventarioPage() {
                 onChange={e => setVenta(v => ({...v, metodo_pago: e.target.value}))}>
                 {Object.entries(METODO_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </Select>
-              {esGlobal && (
-                <Select label="Sucursal" required value={venta.local_id}
-                  onChange={e => setVenta(v => ({...v, local_id: e.target.value}))}>
-                  <option value="">Seleccionar…</option>
-                  <option value="1">Villaflora</option>
-                  <option value="2">Florida</option>
-                </Select>
-              )}
+              <Select label="Vender desde" required value={venta.local_id}
+                 onChange={e => setVenta(v => ({...v, local_id: e.target.value}))}>
+                <option value="">Seleccionar…</option>
+                <option value="1">Villaflora</option>
+                <option value="2">Florida</option>
+                <option value="0">Bodega</option>
+              </Select>
 
               {/* Resumen precio */}
               {prodSel && (
