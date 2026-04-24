@@ -169,13 +169,19 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
               onChange={e => setBebe(b => ({...b, email_representante: e.target.value}))} />
           </div>
           <div style={{ gridColumn:'1/-1' }}>
-            <Select label="Grupo" value={bebe.grupo_id || ''}
-              onChange={e => setBebe(b => ({...b, grupo_id: e.target.value}))}>
-              <option value="">Sin asignar</option>
-              {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+            <Select label="Sucursal" value={bebe.local_id || ''}
+              onChange={e => setBebe(b => ({...b, local_id: parseInt(e.target.value)}))}>
+              {LOCALES.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
             </Select>
           </div>
-        </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <Select label="Grupo" value={bebe.grupo_id || ''}
+              onChange={e => setBebe(b => ({...b, grupo_id: e.target.value}))}>
+            <option value="">Sin asignar</option>
+            {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+            </Select>
+          </div>
+          </div>
         <div style={{ display:'flex', justifyContent:'flex-end', marginTop:'1rem' }}>
           <Btn onClick={handleGuardar} loading={saving}>Guardar cambios</Btn>
         </div>
