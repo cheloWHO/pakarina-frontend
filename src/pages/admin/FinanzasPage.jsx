@@ -49,11 +49,13 @@ export default function FinanzasPage() {
   async function handleGasto(e) {
     e.preventDefault()
     setSaving(true); setFormMsg(null)
-    const local_id_final = esGlobal ? parseInt(gasto.local_id_form) : localId
-    if (!local_id_final) {
+    const local_id_final = esGlobal
+      ? (gasto.local_id_form === 'global' ? null : parseInt(gasto.local_id_form))
+      : localId
+    if (esGlobal && !gasto.local_id_form) {
       setFormMsg({ type:'error', text:'Debes seleccionar una sucursal' })
       setSaving(false)
-      return
+    return
     }
     try {
       await finanzasAPI.registrarGasto({ ...gasto, local_id: local_id_final })
