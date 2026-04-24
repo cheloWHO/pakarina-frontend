@@ -110,7 +110,8 @@ export default function FinanzasPage() {
                   <option value="">Seleccionar sucursal…</option>
                   <option value="1">Villaflora</option>
                   <option value="2">Florida</option>
-                </Select>
+                  <option value="global">Global (ambas sucursales)</option>
+                  </Select>
               )}
               <div style={{ gridColumn:'1/-1' }}>
                 <Input label="Descripción" value={gasto.descripcion}
