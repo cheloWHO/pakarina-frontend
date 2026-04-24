@@ -91,7 +91,7 @@ export default function ClasesPage() {
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:'6px', alignItems:'center' }}>
-                  {p.alerta_vencimiento && (
+                  {!!p.alerta_vencimiento && (
                     <Badge color={dias <= 0 ? 'red' : 'warn'}>
                       {dias <= 0 ? 'Vencido' : `${dias}d`}
                     </Badge>
