@@ -94,8 +94,9 @@ export default function FinanzasPage() {
           <div style={{ fontWeight:600, marginBottom:'1rem', fontSize:'14px' }}>Registrar gasto</div>
           <form onSubmit={handleGasto} style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
-              <Input label="Monto ($)" type="number" step="0.01" min="0" required
-                value={gasto.monto} onChange={e => setGasto(g => ({...g, monto: e.target.value}))} />
+             <Input label="Monto ($)" type="text" inputMode="decimal" required
+                value={gasto.monto} placeholder="0.00"
+                 onChange={e => setGasto(g => ({...g, monto: e.target.value.replace(',', '.')}))} />
               <Input label="Fecha" type="date" value={gasto.fecha}
                 onChange={e => setGasto(g => ({...g, fecha: e.target.value}))} />
               <Select label="Categoría" value={gasto.categoria}
