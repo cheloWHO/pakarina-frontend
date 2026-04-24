@@ -6,32 +6,37 @@ import { fmtMoney, fmtFecha } from '../../utils'
 
 const CATEGORIAS = ['nomina','arriendo','servicios','insumos','comision_bancaria','proveedor','marketing','otro']
 const BANCOS = ['produbanco','pichincha','efectivo','payphone']
+const BANCO_LABEL = { produbanco:'Produbanco', pichincha:'Pichincha', efectivo:'Efectivo', payphone:'Payphone' }
+const LOCALES = [{ id:'', nombre:'Todos (Global)' }, { id:'1', nombre:'Villaflora' }, { id:'2', nombre:'Florida' }]
 
 export default function FinanzasPage() {
   const { user }   = useAuth()
+  const esGlobal   = !user?.local_id
   const localId    = user?.local_id
   const mesActual  = new Date().toISOString().slice(0, 7)
 
-  const [mes,      setMes]     = useState(mesActual)
-  const [resumen,  setResumen] = useState(null)
-  const [gastos,   setGastos]  = useState([])
-  const [loading,  setLoading] = useState(true)
-  const [showForm, setShowForm]= useState(false)
-  const [saving,   setSaving]  = useState(false)
-  const [formMsg,  setFormMsg] = useState(null)
+  const [mes,       setMes]      = useState(mesActual)
+  const [filtroLocal, setFiltroLocal] = useState(localId || '')
+  const [resumen,   setResumen]  = useState(null)
+  const [gastos,    setGastos]   = useState([])
+  const [loading,   setLoading]  = useState(true)
+  const [showForm,  setShowForm] = useState(false)
+  const [saving,    setSaving]   = useState(false)
+  const [formMsg,   setFormMsg]  = useState(null)
 
   const [gasto, setGasto] = useState({
     monto:'', categoria:'arriendo', descripcion:'',
     fecha: new Date().toISOString().split('T')[0],
     metodo_pago_salida: 'produbanco',
+    local_id_form: localId || '',
   })
 
   async function load() {
     setLoading(true)
     try {
       const [rRes, gRes] = await Promise.all([
-        finanzasAPI.resumen({ local_id: localId, mes }),
-        finanzasAPI.listarGastos({ local_id: localId, mes }),
+        finanzasAPI.resumen({ local_id: filtroLocal || undefined, mes }),
+        finanzasAPI.listarGastos({ local_id: filtroLocal || undefined, mes }),
       ])
       setResumen(rRes.data)
       setGastos(gRes.data)
@@ -39,23 +44,27 @@ export default function FinanzasPage() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [localId, mes])
+  useEffect(() => { load() }, [filtroLocal, mes])
 
   async function handleGasto(e) {
     e.preventDefault()
     setSaving(true); setFormMsg(null)
+    const local_id_final = esGlobal ? parseInt(gasto.local_id_form) : localId
+    if (!local_id_final) {
+      setFormMsg({ type:'error', text:'Debes seleccionar una sucursal' })
+      setSaving(false)
+      return
+    }
     try {
-      await finanzasAPI.registrarGasto({ ...gasto, local_id: localId })
+      await finanzasAPI.registrarGasto({ ...gasto, local_id: local_id_final })
       setFormMsg({ type:'ok', text:'Gasto registrado correctamente' })
       setShowForm(false)
-      setGasto({ monto:'', categoria:'arriendo', descripcion:'', fecha: new Date().toISOString().split('T')[0], metodo_pago_salida:'produbanco' })
+      setGasto({ monto:'', categoria:'arriendo', descripcion:'', fecha: new Date().toISOString().split('T')[0], metodo_pago_salida:'produbanco', local_id_form: localId || '' })
       load()
     } catch(e) {
       setFormMsg({ type:'error', text: e.response?.data?.error || 'Error al guardar' })
     } finally { setSaving(false) }
   }
-
-  const BANCO_LABEL = { produbanco:'Produbanco', pichincha:'Pichincha', efectivo:'Efectivo', payphone:'Payphone' }
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
@@ -64,6 +73,12 @@ export default function FinanzasPage() {
           <h2 style={{ fontSize:'20px', fontWeight:600 }}>Finanzas</h2>
         </div>
         <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
+          {esGlobal && (
+            <select value={filtroLocal} onChange={e => setFiltroLocal(e.target.value)}
+              style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }}>
+              {LOCALES.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+            </select>
+          )}
           <input type="month" value={mes} onChange={e => setMes(e.target.value)}
             style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }} />
           <Btn onClick={() => setShowForm(s => !s)}>+ Gasto</Btn>
@@ -89,9 +104,18 @@ export default function FinanzasPage() {
                 onChange={e => setGasto(g => ({...g, metodo_pago_salida: e.target.value}))}>
                 {BANCOS.map(b => <option key={b} value={b}>{BANCO_LABEL[b]}</option>)}
               </Select>
+              {esGlobal && (
+                <Select label="Sucursal *" required value={gasto.local_id_form}
+                  onChange={e => setGasto(g => ({...g, local_id_form: e.target.value}))}>
+                  <option value="">Seleccionar sucursal…</option>
+                  <option value="1">Villaflora</option>
+                  <option value="2">Florida</option>
+                </Select>
+              )}
               <div style={{ gridColumn:'1/-1' }}>
                 <Input label="Descripción" value={gasto.descripcion}
-                  onChange={e => setGasto(g => ({...g, descripcion: e.target.value}))} placeholder="Ej. Arriendo mayo Villaflora" />
+                  onChange={e => setGasto(g => ({...g, descripcion: e.target.value}))}
+                  placeholder="Ej. Arriendo mayo Villaflora" />
               </div>
             </div>
             <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
@@ -104,6 +128,13 @@ export default function FinanzasPage() {
 
       {loading ? <Spinner /> : (
         <>
+          {/* Label de vista actual */}
+          {esGlobal && (
+            <div style={{ fontSize:'12px', color:'var(--gray-400)' }}>
+              Mostrando: <strong>{LOCALES.find(l => l.id === filtroLocal)?.nombre || 'Todos'}</strong> · {mes}
+            </div>
+          )}
+
           {/* Stats */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:'12px' }}>
             <StatCard label="Ingresos netos" value={fmtMoney(resumen?.total_ingresos)} color="green" />
@@ -142,6 +173,7 @@ export default function FinanzasPage() {
                     <div style={{ fontWeight:500 }}>{g.descripcion || g.categoria}</div>
                     <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>
                       {fmtFecha(g.fecha)} · {g.categoria} · {BANCO_LABEL[g.metodo_pago_salida] || '—'}
+                      {esGlobal && g.local ? ` · ${g.local}` : ''}
                       {g.es_automatico ? ' · automático' : ''}
                     </div>
                   </div>
