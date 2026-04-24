@@ -96,7 +96,7 @@ export default function ClasesPage() {
                       {dias <= 0 ? 'Vencido' : `${dias}d`}
                     </Badge>
                   )}
-                  <Badge color="green">{p.clases_restantes} / {p.clases_total} clases</Badge>
+                  <Badge color="green">{p.clases_usadas} / {p.clases_total} clases</Badge>
                 </div>
               </div>
 
