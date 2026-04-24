@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { finanzasAPI } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import { Card, StatCard, Btn, Input, Select, Alert, Spinner } from '../../components/ui'
-import { fmtMoney, fmtFecha } from '../../utils'
+import { fmtMoney, fmtFecha, METODO_LABEL } from '../../utils'
 
 const CATEGORIAS = ['nomina','arriendo','servicios','insumos','comision_bancaria','proveedor','marketing','otro']
 const BANCOS = ['produbanco','pichincha','efectivo','payphone']
