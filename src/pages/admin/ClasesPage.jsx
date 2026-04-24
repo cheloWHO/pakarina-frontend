@@ -87,7 +87,7 @@ export default function ClasesPage() {
                 <div>
                   <div style={{ fontWeight:600, fontSize:'14px' }}>{p.bebe}</div>
                   <div style={{ fontSize:'12px', color:'var(--gray-400)', marginTop:'2px' }}>
-                    {p.servicio} · {p.whatsapp}
+                   {p.servicio} · {p.whatsapp} · {p.local_id === 1 ? 'Villaflora' : 'Florida'}
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:'6px', alignItems:'center' }}>
