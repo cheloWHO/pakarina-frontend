@@ -196,7 +196,9 @@ export default function InventarioPage() {
                 onChange={e => setMov(m => ({...m, tipo: e.target.value}))}>
                 <option value="entrada_proveedor">Entrada de proveedor → Bodega</option>
                 <option value="transferencia">Transferencia Bodega → Local</option>
-                <option value="ajuste">Ajuste de stock</option>
+                <option value="ajuste">Ajuste de stock (Bodega)</option>
+                <option value="ajuste_villaflora">Ajuste de stock (Villaflora)</option>
+                <option value="ajuste_florida">Ajuste de stock (Florida)</option>
               </Select>
               <Input label="Cantidad" type="number" min="1" required
                 value={mov.cantidad} onChange={e => setMov(m => ({...m, cantidad: e.target.value}))} />
