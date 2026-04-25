@@ -15,7 +15,9 @@ export default function FinanzasPage() {
   const localId    = user?.local_id
   const mesActual  = new Date().toISOString().slice(0, 7)
 
-  const [mes,       setMes]      = useState(mesActual)
+  const [vistaFecha, setVistaFecha] = useState('mes')
+  const [mes,        setMes]        = useState(mesActual)
+  const [anio,       setAnio]       = useState(new Date().getFullYear().toString())
   const [filtroLocal, setFiltroLocal] = useState(localId || '')
   const [resumen,   setResumen]  = useState(null)
   const [gastos,    setGastos]   = useState([])
@@ -34,9 +36,11 @@ export default function FinanzasPage() {
   async function load() {
     setLoading(true)
     try {
+      const filtroMes  = vistaFecha === 'mes'  ? mes  : undefined
+      const filtroAnio = vistaFecha === 'anio' ? anio : undefined
       const [rRes, gRes] = await Promise.all([
-        finanzasAPI.resumen({ local_id: filtroLocal || undefined, mes }),
-        finanzasAPI.listarGastos({ local_id: filtroLocal || undefined, mes }),
+        finanzasAPI.resumen({ local_id: filtroLocal || undefined, mes: filtroMes, anio: filtroAnio }),
+        finanzasAPI.listarGastos({ local_id: filtroLocal || undefined, mes: filtroMes, anio: filtroAnio }),
       ])
       setResumen(rRes.data)
       setGastos(gRes.data)
@@ -44,7 +48,7 @@ export default function FinanzasPage() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [filtroLocal, mes])
+  useEffect(() => { load() }, [filtroLocal, mes, anio, vistaFecha])
 
   async function handleGasto(e) {
     e.preventDefault()
@@ -81,8 +85,23 @@ export default function FinanzasPage() {
               {LOCALES.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
             </select>
           )}
-          <input type="month" value={mes} onChange={e => setMes(e.target.value)}
-            style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }} />
+          <div style={{ display:'flex', gap:'6px', alignItems:'center' }}>
+  <div style={{ display:'flex', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', overflow:'hidden' }}>
+    {[['mes','Mes'],['anio','Año']].map(([k,l]) => (
+      <div key={k} onClick={() => setVistaFecha(k)}
+        style={{ padding:'0 12px', height:'36px', display:'flex', alignItems:'center', cursor:'pointer', fontSize:'12px', fontWeight: vistaFecha===k ? 600 : 400, background: vistaFecha===k ? 'var(--brand)' : '#fff', color: vistaFecha===k ? '#fff' : 'var(--gray-600)' }}>
+        {l}
+      </div>
+    ))}
+  </div>
+  {vistaFecha === 'mes'
+    ? <input type="month" value={mes} onChange={e => setMes(e.target.value)}
+        style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }} />
+    : <input type="number" value={anio} min="2024" max="2030"
+        onChange={e => setAnio(e.target.value)}
+        style={{ height:'36px', width:'80px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }} />
+  }
+</div>
           <Btn onClick={() => setShowForm(s => !s)}>+ Gasto</Btn>
         </div>
       </div>
