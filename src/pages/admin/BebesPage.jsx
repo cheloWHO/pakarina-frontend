@@ -46,9 +46,9 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [planIdFecha, setPlanIdFecha] = useState(null)
   const [nuevaFecha,  setNuevaFecha]  = useState('')
   const [savingFecha, setSavingFecha] = useState(false)
-  const [editandoNota,  setEditandoNota]  = useState(null)
-  const [textoNota,     setTextoNota]     = useState('')
-  const [savingNota,    setSavingNota]    = useState(false)
+  const [editandoNota, setEditandoNota] = useState(null)
+  const [textoNota,    setTextoNota]    = useState('')
+  const [savingNota,   setSavingNota]   = useState(false)
 
   useEffect(() => {
     planesAPI.listar({ bebe_id: bebeInicial.id })
@@ -63,14 +63,14 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     setSaving(true)
     setMsg(null)
     try {
-        await bebesAPI.actualizar(bebe.id, {
-          nombre_completo:        bebe.nombre_completo,
-          fecha_nacimiento:       bebe.fecha_nacimiento,
-          nombre_tutor:           bebe.nombre_tutor,
-          whatsapp_representante: bebe.whatsapp_representante,
-          email_representante:    bebe.email_representante,
-          grupo_id:               bebe.grupo_id || null,
-          local_id:               bebe.local_id,
+      await bebesAPI.actualizar(bebe.id, {
+        nombre_completo:        bebe.nombre_completo,
+        fecha_nacimiento:       bebe.fecha_nacimiento,
+        nombre_tutor:           bebe.nombre_tutor,
+        whatsapp_representante: bebe.whatsapp_representante,
+        email_representante:    bebe.email_representante,
+        grupo_id:               bebe.grupo_id || null,
+        local_id:               bebe.local_id,
       })
       setMsg({ type: 'ok', text: 'Datos actualizados correctamente' })
       onSaved()
@@ -170,18 +170,18 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
           </div>
           <div style={{ gridColumn:'1/-1' }}>
             <Select label="Sucursal" value={bebe.local_id || ''}
-              onChange={e => setBebe(b => ({...b, local_id: parseInt(e.target.value)}))}>
+              onChange={e => setBebe(b => ({...b, local_id: e.target.value}))}>
               {LOCALES.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
             </Select>
           </div>
           <div style={{ gridColumn:'1/-1' }}>
             <Select label="Grupo" value={bebe.grupo_id || ''}
               onChange={e => setBebe(b => ({...b, grupo_id: e.target.value}))}>
-            <option value="">Sin asignar</option>
-            {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+              <option value="">Sin asignar</option>
+              {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
             </Select>
           </div>
-          </div>
+        </div>
         <div style={{ display:'flex', justifyContent:'flex-end', marginTop:'1rem' }}>
           <Btn onClick={handleGuardar} loading={saving}>Guardar cambios</Btn>
         </div>
@@ -259,77 +259,50 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
           </span>
         </div>
         {clases.length === 0 ? (
-  <Empty message="Sin clases registradas" />
-) : (
-  <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-    {clases.map(c => (
-      <div key={c.id} style={{ border:'1px solid var(--gray-100)', borderRadius:'var(--radius-md)', padding:'12px' }}>
-        {/* Fila superior: fecha, tipo, registrado por */}
-        <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap', marginBottom:'8px' }}>
-          <span style={{ fontSize:'12px', color:'var(--gray-600)', whiteSpace:'nowrap' }}>{fmtFecha(c.fecha)}</span>
-          <Badge color={c.tipo_clase === 'no_asistio' ? 'gray' : 'green'}>
-            {TIPO_CLASE_LABEL[c.tipo_clase] || c.tipo_clase}
-          </Badge>
-          <span style={{ fontSize:'11px', color:'var(--gray-400)' }}>{c.registrado_por}</span>
-        </div>
-        {/* Nota interna */}
-        {editandoNota === c.id ? (
-          <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
-            <textarea
-              value={textoNota}
-              onChange={e => setTextoNota(e.target.value)}
-              rows={3}
-              style={{
-                width:'100%', padding:'6px 8px', fontSize:'12px',
-                border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
-                resize:'vertical', fontFamily:'inherit', outline:'none',
-                background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
-              }}
-            />
-            <div style={{ display:'flex', gap:'6px' }}>
-              <Btn size="sm" onClick={() => handleGuardarNota(c.id)} loading={savingNota}>Guardar</Btn>
-              <Btn size="sm" variant="ghost" onClick={() => { setEditandoNota(null); setTextoNota('') }}>Cancelar</Btn>
-            </div>
-          </div>
+          <Empty message="Sin clases registradas" />
         ) : (
-          <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'8px 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'8px' }}>
-            <span style={{ fontSize:'12px', color: c.observaciones ? 'var(--gray-900)' : 'var(--gray-400)', flex:1, lineHeight:'1.5' }}>
-              {c.observaciones || 'Sin nota'}
-            </span>
-            <Btn size="sm" variant="ghost"
-              onClick={() => { setEditandoNota(c.id); setTextoNota(c.observaciones || '') }}
-              style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', flexShrink:0 }}>
-              ✏️
-            </Btn>
-          </div>
-        )}
-      </div>
-    ))}
-  </div>
-)}
-                          />
-                          <div style={{ display:'flex', gap:'6px' }}>
-                            <Btn size="sm" onClick={() => handleGuardarNota(c.id)} loading={savingNota}>Guardar</Btn>
-                            <Btn size="sm" variant="ghost" onClick={() => { setEditandoNota(null); setTextoNota('') }}>Cancelar</Btn>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ display:'flex', alignItems:'flex-start', gap:'8px' }}>
-                          <span style={{ color: c.observaciones ? 'var(--gray-900)' : 'var(--gray-300)', fontSize:'12px', flex:1 }}>
-                            {c.observaciones || 'Sin nota'}
-                          </span>
-                          <Btn size="sm" variant="ghost"
-                            onClick={() => { setEditandoNota(c.id); setTextoNota(c.observaciones || '') }}
-                            style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap' }}>
-                            ✏️
-                          </Btn>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+            {clases.map(c => (
+              <div key={c.id} style={{ border:'1px solid var(--gray-100)', borderRadius:'var(--radius-md)', padding:'12px' }}>
+                <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap', marginBottom:'8px' }}>
+                  <span style={{ fontSize:'12px', color:'var(--gray-600)', whiteSpace:'nowrap' }}>{fmtFecha(c.fecha)}</span>
+                  <Badge color={c.tipo_clase === 'no_asistio' ? 'gray' : 'green'}>
+                    {TIPO_CLASE_LABEL[c.tipo_clase] || c.tipo_clase}
+                  </Badge>
+                  <span style={{ fontSize:'11px', color:'var(--gray-400)' }}>{c.registrado_por}</span>
+                </div>
+                {editandoNota === c.id ? (
+                  <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                    <textarea
+                      value={textoNota}
+                      onChange={e => setTextoNota(e.target.value)}
+                      rows={3}
+                      style={{
+                        width:'100%', padding:'6px 8px', fontSize:'12px',
+                        border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
+                        resize:'vertical', fontFamily:'inherit', outline:'none',
+                        background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
+                      }}
+                    />
+                    <div style={{ display:'flex', gap:'6px' }}>
+                      <Btn size="sm" onClick={() => handleGuardarNota(c.id)} loading={savingNota}>Guardar</Btn>
+                      <Btn size="sm" variant="ghost" onClick={() => { setEditandoNota(null); setTextoNota('') }}>Cancelar</Btn>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'8px 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'8px' }}>
+                    <span style={{ fontSize:'12px', color: c.observaciones ? 'var(--gray-900)' : 'var(--gray-400)', flex:1, lineHeight:'1.5' }}>
+                      {c.observaciones || 'Sin nota'}
+                    </span>
+                    <Btn size="sm" variant="ghost"
+                      onClick={() => { setEditandoNota(c.id); setTextoNota(c.observaciones || '') }}
+                      style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', flexShrink:0 }}>
+                      ✏️
+                    </Btn>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </Card>
@@ -345,15 +318,15 @@ export default function BebesPage() {
   const esGlobal   = !user?.local_id
   const localId    = user?.local_id
 
-  const [bebes,      setBebes]      = useState([])
-  const [grupos,     setGrupos]     = useState([])
-  const [loading,    setLoading]    = useState(true)
-  const [showForm,   setShowForm]   = useState(false)
+  const [bebes,       setBebes]       = useState([])
+  const [grupos,      setGrupos]      = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [showForm,    setShowForm]    = useState(false)
   const [bebeDetalle, setBebeDetalle] = useState(null)
-  const [paso,       setPaso]       = useState(0)
-  const [saving,     setSaving]     = useState(false)
-  const [success,    setSuccess]    = useState(null)
-  const [formErr,    setFormErr]    = useState('')
+  const [paso,        setPaso]        = useState(0)
+  const [saving,      setSaving]      = useState(false)
+  const [success,     setSuccess]     = useState(null)
+  const [formErr,     setFormErr]     = useState('')
 
   const [bebe, setBebe] = useState({
     nombre_completo:'', fecha_nacimiento:'', grupo_id:'',
@@ -379,7 +352,7 @@ export default function BebesPage() {
 
   useEffect(() => { loadBebes() }, [localId])
 
-  const srv = SERVICIOS.find(s => s.id === srvId)
+  const srv      = SERVICIOS.find(s => s.id === srvId)
   const comision = metodo === 'tarjeta' && srv ? parseFloat((srv.precio * 0.06).toFixed(2)) : 0
   const neto     = srv ? parseFloat((srv.precio - comision).toFixed(2)) : 0
   const localIdFinal = esGlobal ? parseInt(bebe.local_id_form) : localId
@@ -500,7 +473,8 @@ export default function BebesPage() {
                       </div>
                     )}
                     <div style={{ gridColumn:'1/-1' }}>
-                      <Select label="Grupo (opcional)" value={bebe.grupo_id} onChange={e => setBebe(b => ({...b, grupo_id: e.target.value}))}>
+                      <Select label="Grupo (opcional)" value={bebe.grupo_id}
+                        onChange={e => setBebe(b => ({...b, grupo_id: e.target.value}))}>
                         <option value="">Sin asignar</option>
                         {grupos.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
                       </Select>
