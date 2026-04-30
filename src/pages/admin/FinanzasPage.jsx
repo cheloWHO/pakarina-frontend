@@ -74,12 +74,11 @@ export default function FinanzasPage() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div>
-          <h2 style={{ fontSize:'20px', fontWeight:600 }}>Finanzas</h2>
-        </div>
-        <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
-          {esGlobal && (
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:'10px' }}>
+      <div>
+        <h2 style={{ fontSize:'20px', fontWeight:600 }}>Finanzas</h2>
+      </div>
+        <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>          {esGlobal && (
             <select value={filtroLocal} onChange={e => setFiltroLocal(e.target.value)}
               style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }}>
               {LOCALES.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
