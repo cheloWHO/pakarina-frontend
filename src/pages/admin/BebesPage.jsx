@@ -259,41 +259,54 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
           </span>
         </div>
         {clases.length === 0 ? (
-          <Empty message="Sin clases registradas" />
+  <Empty message="Sin clases registradas" />
+) : (
+  <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+    {clases.map(c => (
+      <div key={c.id} style={{ border:'1px solid var(--gray-100)', borderRadius:'var(--radius-md)', padding:'12px' }}>
+        {/* Fila superior: fecha, tipo, registrado por */}
+        <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap', marginBottom:'8px' }}>
+          <span style={{ fontSize:'12px', color:'var(--gray-600)', whiteSpace:'nowrap' }}>{fmtFecha(c.fecha)}</span>
+          <Badge color={c.tipo_clase === 'no_asistio' ? 'gray' : 'green'}>
+            {TIPO_CLASE_LABEL[c.tipo_clase] || c.tipo_clase}
+          </Badge>
+          <span style={{ fontSize:'11px', color:'var(--gray-400)' }}>{c.registrado_por}</span>
+        </div>
+        {/* Nota interna */}
+        {editandoNota === c.id ? (
+          <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+            <textarea
+              value={textoNota}
+              onChange={e => setTextoNota(e.target.value)}
+              rows={3}
+              style={{
+                width:'100%', padding:'6px 8px', fontSize:'12px',
+                border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
+                resize:'vertical', fontFamily:'inherit', outline:'none',
+                background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
+              }}
+            />
+            <div style={{ display:'flex', gap:'6px' }}>
+              <Btn size="sm" onClick={() => handleGuardarNota(c.id)} loading={savingNota}>Guardar</Btn>
+              <Btn size="sm" variant="ghost" onClick={() => { setEditandoNota(null); setTextoNota('') }}>Cancelar</Btn>
+            </div>
+          </div>
         ) : (
-          <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px', minWidth:'500px' }}>
-            <thead>
-              <tr style={{ borderBottom:'2px solid var(--gray-100)' }}>
-              <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600, whiteSpace:'nowrap' }}>Fecha</th>
-              <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600, whiteSpace:'nowrap' }}>Tipo</th>
-              <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600, whiteSpace:'nowrap' }}>Registrado por</th>
-              <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Nota interna</th>
-             </tr>
-          </thead>
-              <tbody>
-                {clases.map(c => (
-                  <tr key={c.id} style={{ borderBottom:'1px solid var(--gray-100)' }}>
-                    <td style={{ padding:'8px', whiteSpace:'nowrap' }}>{fmtFecha(c.fecha)}</td>
-                    <td style={{ padding:'8px' }}>
-                      <Badge color={c.tipo_clase === 'no_asistio' ? 'gray' : 'green'}>
-                        {TIPO_CLASE_LABEL[c.tipo_clase] || c.tipo_clase}
-                      </Badge>
-                    </td>
-                    <td style={{ padding:'8px', color:'var(--gray-400)', fontSize:'12px' }}>{c.registrado_por}</td>
-                    <td style={{ padding:'8px', minWidth:'200px' }}>
-                      {editandoNota === c.id ? (
-                        <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
-                          <textarea
-                            value={textoNota}
-                            onChange={e => setTextoNota(e.target.value)}
-                            rows={3}
-                            style={{
-                              width:'100%', padding:'6px 8px', fontSize:'12px',
-                              border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
-                              resize:'vertical', fontFamily:'inherit', outline:'none',
-                              background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
-                            }}
+          <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'8px 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'8px' }}>
+            <span style={{ fontSize:'12px', color: c.observaciones ? 'var(--gray-900)' : 'var(--gray-400)', flex:1, lineHeight:'1.5' }}>
+              {c.observaciones || 'Sin nota'}
+            </span>
+            <Btn size="sm" variant="ghost"
+              onClick={() => { setEditandoNota(c.id); setTextoNota(c.observaciones || '') }}
+              style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', flexShrink:0 }}>
+              ✏️
+            </Btn>
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+)}
                           />
                           <div style={{ display:'flex', gap:'6px' }}>
                             <Btn size="sm" onClick={() => handleGuardarNota(c.id)} loading={savingNota}>Guardar</Btn>
