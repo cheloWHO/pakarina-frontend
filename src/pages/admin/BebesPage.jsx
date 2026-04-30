@@ -261,16 +261,16 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
         {clases.length === 0 ? (
           <Empty message="Sin clases registradas" />
         ) : (
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
-              <thead>
-                <tr style={{ borderBottom:'2px solid var(--gray-100)' }}>
-                  <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Fecha</th>
-                  <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Tipo</th>
-                  <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Registrado por</th>
-                  <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Nota interna</th>
-                </tr>
-              </thead>
+          <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+  <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px', minWidth:'500px' }}>
+    <thead>
+      <tr style={{ borderBottom:'2px solid var(--gray-100)' }}>
+        <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600, whiteSpace:'nowrap' }}>Fecha</th>
+        <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600, whiteSpace:'nowrap' }}>Tipo</th>
+        <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600, whiteSpace:'nowrap' }}>Registrado por</th>
+        <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Nota interna</th>
+      </tr>
+    </thead>
               <tbody>
                 {clases.map(c => (
                   <tr key={c.id} style={{ borderBottom:'1px solid var(--gray-100)' }}>
