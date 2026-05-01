@@ -130,7 +130,7 @@ export default function ClasesPage() {
                     onClick={() => marcar(p)}
                     loading={marking === p.id}
                     variant={tipo === 'no_asistio' ? 'secondary' : 'primary'}
-                    disabled={dias !== null && dias < 0}
+                    disabled={false}
                   >
                     {tipo === 'no_asistio' ? 'Marcar inasistencia' : 'Marcar clase ✓'}
                   </Btn>
