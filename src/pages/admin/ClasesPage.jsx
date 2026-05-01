@@ -51,6 +51,7 @@ export default function ClasesPage() {
       setNotaSel(s  => ({ ...s, [plan.id]: '' }))
       setShowExtra(s => ({ ...s, [plan.id]: false }))
       await loadPlanes()
+      setMsg({ type: 'error', text: 'El plan de este bebé está vencido' })
     } catch (e) {
       setMsg({ type: 'error', text: e.response?.data?.error || 'Error al marcar clase' })
     } finally {
