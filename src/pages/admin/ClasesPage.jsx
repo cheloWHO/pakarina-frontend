@@ -73,6 +73,16 @@ export default function ClasesPage() {
       <h2 style={{ fontSize:'20px', fontWeight:600 }}>Control de clases</h2>
         <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{planesFiltrados.length} planes activos hoy</p>
       </div>
+        
+        {esGlobal && (
+    <select value={filtroLocal} onChange={e => setFiltroLocal(e.target.value)}
+      style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }}>
+      <option value="">Todos</option>
+      <option value="1">Villaflora</option>
+      <option value="2">Florida</option>
+    </select>
+  )}
+</div>
 
       {msg && (
         <Alert type={msg.type === 'ok' ? 'ok' : 'error'}>{msg.text}</Alert>
