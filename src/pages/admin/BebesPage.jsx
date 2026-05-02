@@ -36,6 +36,7 @@ const LOCALES = [
 // ─────────────────────────────────────────
 function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [bebe,        setBebe]        = useState({ ...bebeInicial })
+  const [filtroLocal, setFiltroLocal] = useState('')
   const [planes,      setPlanes]      = useState([])
   const [clases,      setClases]      = useState([])
   const [saving,      setSaving]      = useState(false)
@@ -438,6 +439,10 @@ export default function BebesPage() {
     bebe.nombre_tutor && bebe.whatsapp_representante && bebe.email_representante &&
     (!esGlobal || bebe.local_id_form)
 
+  const bebesFiltrados = filtroLocal
+  ? bebes.filter(b => b.local_id === parseInt(filtroLocal))
+  : bebes
+  
   if (loading) return <Spinner />
 
   if (bebeDetalle) {
@@ -453,13 +458,23 @@ export default function BebesPage() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div>
-          <h2 style={{ fontSize:'20px', fontWeight:600 }}>Bebés</h2>
-          <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{bebes.length} registrados</p>
-        </div>
-        <Btn onClick={() => { setShowForm(true); setSuccess(null) }}>+ Registrar bebé</Btn>
-      </div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'10px' }}>
+  <div>
+    <h2 style={{ fontSize:'20px', fontWeight:600 }}>Bebés</h2>
+    <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{bebesFiltrados.length} registrados</p>
+  </div>
+  <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+    {esGlobal && (
+      <select value={filtroLocal} onChange={e => setFiltroLocal(e.target.value)}
+        style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }}>
+        <option value="">Todos</option>
+        <option value="1">Villaflora</option>
+        <option value="2">Florida</option>
+      </select>
+    )}
+    <Btn onClick={() => { setShowForm(true); setSuccess(null) }}>+ Registrar bebé</Btn>
+  </div>
+</div>
 
       {showForm && (
         <Card>
@@ -621,7 +636,7 @@ export default function BebesPage() {
 
       <Card>
         {bebes.length === 0 ? <Empty message="Sin bebés registrados" /> : (
-          bebes.map(b => (
+          bebesFiltrados.map(b => (
             <div key={b.id} onClick={() => setBebeDetalle(b)}
               style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid var(--gray-100)', cursor:'pointer' }}>
               <div>
