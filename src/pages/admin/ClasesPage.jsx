@@ -8,6 +8,7 @@ const TIPOS = ['piso', 'hidroterapia', 'no_asistio']
 
 export default function ClasesPage() {
   const { user }  = useAuth()
+  const esGlobal  = !user?.local_id
   const localId   = user?.local_id
   const [planes,      setPlanes]      = useState([])
   const [loading,     setLoading]     = useState(true)
