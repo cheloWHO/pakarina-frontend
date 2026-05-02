@@ -279,24 +279,48 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                   <span style={{ fontSize:'11px', color:'var(--gray-400)' }}>{c.registrado_por}</span>
                 </div>
                 {editandoNota === c.id ? (
-                  <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
-                    <textarea
-                      value={textoNota}
-                      onChange={e => setTextoNota(e.target.value)}
-                      rows={3}
-                      style={{
-                        width:'100%', padding:'6px 8px', fontSize:'12px',
-                        border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
-                        resize:'vertical', fontFamily:'inherit', outline:'none',
-                        background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
-                      }}
-                    />
-                    <div style={{ display:'flex', gap:'6px' }}>
-                      <Btn size="sm" onClick={() => handleGuardarNota(c.id)} loading={savingNota}>Guardar</Btn>
-                      <Btn size="sm" variant="ghost" onClick={() => { setEditandoNota(null); setTextoNota('') }}>Cancelar</Btn>
-                    </div>
-                  </div>
-                ) : (
+  <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+      <Input
+        label="Fecha de la clase"
+        type="date"
+        value={editandoFecha}
+        onChange={e => setEditandoFecha(e.target.value)}
+      />
+      <Select
+        label="Tipo de clase"
+        value={editandoTipo}
+        onChange={e => setEditandoTipo(e.target.value)}
+      >
+        {Object.entries(TIPO_CLASE_LABEL).map(([key, label]) => (
+          <option key={key} value={key}>{label}</option>
+        ))}
+      </Select>
+    </div>
+    <textarea
+      value={textoNota}
+      onChange={e => setTextoNota(e.target.value)}
+      rows={3}
+      placeholder="Nota (opcional)"
+      style={{
+        width:'100%', padding:'6px 8px', fontSize:'12px',
+        border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
+        resize:'vertical', fontFamily:'inherit', outline:'none',
+        background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
+      }}
+    />
+    <div style={{ display:'flex', gap:'6px' }}>
+      <Btn size="sm" onClick={() => handleGuardarClase(c.id)} loading={savingNota}>Guardar</Btn>
+      <Btn size="sm" variant="ghost" onClick={() => {
+        setEditandoNota(null);
+        setTextoNota('');
+        setEditandoTipo('');
+        setEditandoFecha('');
+      }}>Cancelar</Btn>
+    </div>
+  </div>
+) : (
+  // ... bloque existente sin cambios
                   <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'8px 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'8px' }}>
                     <span style={{ fontSize:'12px', color: c.observaciones ? 'var(--gray-900)' : 'var(--gray-400)', flex:1, lineHeight:'1.5' }}>
                       {c.observaciones || 'Sin nota'}
