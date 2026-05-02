@@ -47,6 +47,8 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [nuevaFecha,  setNuevaFecha]  = useState('')
   const [savingFecha, setSavingFecha] = useState(false)
   const [editandoNota, setEditandoNota] = useState(null)
+  const [editandoTipo,  setEditandoTipo]  = useState('')
+  const [editandoFecha, setEditandoFecha] = useState('')
   const [textoNota,    setTextoNota]    = useState('')
   const [savingNota,   setSavingNota]   = useState(false)
 
