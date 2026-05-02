@@ -22,9 +22,11 @@ export const planesAPI = {
 }
 // CLASES
 export const clasesAPI = {
-  listar:      (params) => api.get('/api/clases', { params }),
-  marcar:      (data)   => api.post('/api/clases', data),
-  editarClase: (id, body) => api.patch(`/api/clases/${id}`, body), 
+  listar:      (params)            => api.get('/api/clases', { params }),
+  marcar:      (data)              => api.post('/api/clases', data),
+  editarNota:  (id, observaciones) => api.patch(`/api/clases/${id}`, { observaciones }),
+  editarClase: (id, data)          => api.patch(`/api/clases/${id}`, data),
+  eliminar:    (id)                => api.delete(`/api/clases/${id}`),
 }
 // FINANZAS
 export const finanzasAPI = {
