@@ -46,11 +46,11 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [planIdFecha, setPlanIdFecha] = useState(null)
   const [nuevaFecha,  setNuevaFecha]  = useState('')
   const [savingFecha, setSavingFecha] = useState(false)
-  const [editandoNota, setEditandoNota] = useState(null)
+  const [editandoNota,  setEditandoNota]  = useState(null)
   const [editandoTipo,  setEditandoTipo]  = useState('')
   const [editandoFecha, setEditandoFecha] = useState('')
-  const [textoNota,    setTextoNota]    = useState('')
-  const [savingNota,   setSavingNota]   = useState(false)
+  const [textoNota,     setTextoNota]     = useState('')
+  const [savingNota,    setSavingNota]    = useState(false)
 
   useEffect(() => {
     planesAPI.listar({ bebe_id: bebeInicial.id })
@@ -101,7 +101,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     }
   }
 
-  async function handleGuardarClase(claseId)
+  async function handleAgregarClases(planId) {
     if (!clasesExtra || parseInt(clasesExtra) < 1) return
     setSavingExtra(true)
     setMsg(null)
@@ -120,27 +120,35 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   }
 
   async function handleGuardarClase(claseId) {
-  setSavingNota(true);
-  setMsg(null);
-  try {
-    await clasesAPI.editarClase(claseId, {
-      observaciones: textoNota,
-      tipo_clase:    editandoTipo,
-      fecha:         editandoFecha,
-    });
-    const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id });
-    setClases(fresh.data);
-    setEditandoNota(null);
-    setTextoNota('');
-    setEditandoTipo('');
-    setEditandoFecha('');
-    setMsg({ type: 'ok', text: 'Clase actualizada correctamente' });
-  } catch (e) {
-    setMsg({ type: 'error', text: e.response?.data?.error || 'Error al guardar clase' });
-  } finally {
-    setSavingNota(false);
+    setSavingNota(true)
+    setMsg(null)
+    try {
+      await clasesAPI.editarClase(claseId, {
+        observaciones: textoNota,
+        tipo_clase:    editandoTipo,
+        fecha:         editandoFecha,
+      })
+      const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id })
+      setClases(fresh.data)
+      setEditandoNota(null)
+      setTextoNota('')
+      setEditandoTipo('')
+      setEditandoFecha('')
+      setMsg({ type: 'ok', text: 'Clase actualizada correctamente' })
+    } catch (e) {
+      setMsg({ type: 'error', text: e.response?.data?.error || 'Error al guardar clase' })
+    } finally {
+      setSavingNota(false)
+    }
   }
-}
+
+  function cancelarEdicionClase() {
+    setEditandoNota(null)
+    setTextoNota('')
+    setEditandoTipo('')
+    setEditandoFecha('')
+  }
+
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
@@ -279,54 +287,53 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                   <span style={{ fontSize:'11px', color:'var(--gray-400)' }}>{c.registrado_por}</span>
                 </div>
                 {editandoNota === c.id ? (
-  <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
-      <Input
-        label="Fecha de la clase"
-        type="date"
-        value={editandoFecha}
-        onChange={e => setEditandoFecha(e.target.value)}
-      />
-      <Select
-        label="Tipo de clase"
-        value={editandoTipo}
-        onChange={e => setEditandoTipo(e.target.value)}
-      >
-        {Object.entries(TIPO_CLASE_LABEL).map(([key, label]) => (
-          <option key={key} value={key}>{label}</option>
-        ))}
-      </Select>
-    </div>
-    <textarea
-      value={textoNota}
-      onChange={e => setTextoNota(e.target.value)}
-      rows={3}
-      placeholder="Nota (opcional)"
-      style={{
-        width:'100%', padding:'6px 8px', fontSize:'12px',
-        border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
-        resize:'vertical', fontFamily:'inherit', outline:'none',
-        background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
-      }}
-    />
-    <div style={{ display:'flex', gap:'6px' }}>
-      <Btn size="sm" onClick={() => handleGuardarClase(c.id)} loading={savingNota}>Guardar</Btn>
-      <Btn size="sm" variant="ghost" onClick={() => {
-        setEditandoNota(c.id);
-        setTextoNota(c.observaciones || '');
-        setEditandoTipo(c.tipo_clase || '');
-        setEditandoFecha(c.fecha ? c.fecha.split('T')[0] : '');
-      }}>Cancelar</Btn>
-    </div>
-  </div>
-) : (
-  // ... bloque existente sin cambios
+                  <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+                      <Input
+                        label="Fecha de la clase"
+                        type="date"
+                        value={editandoFecha}
+                        onChange={e => setEditandoFecha(e.target.value)}
+                      />
+                      <Select
+                        label="Tipo de clase"
+                        value={editandoTipo}
+                        onChange={e => setEditandoTipo(e.target.value)}
+                      >
+                        {Object.entries(TIPO_CLASE_LABEL).map(([key, label]) => (
+                          <option key={key} value={key}>{label}</option>
+                        ))}
+                      </Select>
+                    </div>
+                    <textarea
+                      value={textoNota}
+                      onChange={e => setTextoNota(e.target.value)}
+                      rows={3}
+                      placeholder="Nota (opcional)"
+                      style={{
+                        width:'100%', padding:'6px 8px', fontSize:'12px',
+                        border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
+                        resize:'vertical', fontFamily:'inherit', outline:'none',
+                        background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
+                      }}
+                    />
+                    <div style={{ display:'flex', gap:'6px' }}>
+                      <Btn size="sm" onClick={() => handleGuardarClase(c.id)} loading={savingNota}>Guardar</Btn>
+                      <Btn size="sm" variant="ghost" onClick={cancelarEdicionClase}>Cancelar</Btn>
+                    </div>
+                  </div>
+                ) : (
                   <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'8px 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'8px' }}>
                     <span style={{ fontSize:'12px', color: c.observaciones ? 'var(--gray-900)' : 'var(--gray-400)', flex:1, lineHeight:'1.5' }}>
                       {c.observaciones || 'Sin nota'}
                     </span>
                     <Btn size="sm" variant="ghost"
-                      onClick={() => { setEditandoNota(c.id); setTextoNota(c.observaciones || '') }}
+                      onClick={() => {
+                        setEditandoNota(c.id)
+                        setTextoNota(c.observaciones || '')
+                        setEditandoTipo(c.tipo_clase || '')
+                        setEditandoFecha(c.fecha ? c.fecha.split('T')[0] : '')
+                      }}
                       style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', flexShrink:0 }}>
                       ✏️
                     </Btn>
