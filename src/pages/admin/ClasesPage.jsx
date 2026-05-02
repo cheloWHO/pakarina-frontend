@@ -9,8 +9,9 @@ const TIPOS = ['piso', 'hidroterapia', 'no_asistio']
 export default function ClasesPage() {
   const { user }  = useAuth()
   const localId   = user?.local_id
-  const [planes,  setPlanes]  = useState([])
-  const [loading, setLoading] = useState(true)
+  const [planes,      setPlanes]      = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [filtroLocal, setFiltroLocal] = useState('')
   const [marking, setMarking] = useState(null)
   const [msg,     setMsg]     = useState(null)
   const [tipoSel,  setTipoSel]  = useState({})
