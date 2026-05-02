@@ -312,10 +312,10 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     <div style={{ display:'flex', gap:'6px' }}>
       <Btn size="sm" onClick={() => handleGuardarClase(c.id)} loading={savingNota}>Guardar</Btn>
       <Btn size="sm" variant="ghost" onClick={() => {
-        setEditandoNota(null);
-        setTextoNota('');
-        setEditandoTipo('');
-        setEditandoFecha('');
+        setEditandoNota(c.id);
+        setTextoNota(c.observaciones || '');
+        setEditandoTipo(c.tipo_clase || '');
+        setEditandoFecha(c.fecha ? c.fecha.split('T')[0] : '');
       }}>Cancelar</Btn>
     </div>
   </div>
