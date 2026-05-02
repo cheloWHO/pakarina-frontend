@@ -119,23 +119,28 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     }
   }
 
-  async function handleGuardarNota(claseId) {
-    setSavingNota(true)
-    setMsg(null)
-    try {
-      await clasesAPI.editarNota(claseId, textoNota)
-      const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id })
-      setClases(fresh.data)
-      setEditandoNota(null)
-      setTextoNota('')
-      setMsg({ type: 'ok', text: 'Nota guardada correctamente' })
-    } catch (e) {
-      setMsg({ type: 'error', text: e.response?.data?.error || 'Error al guardar nota' })
-    } finally {
-      setSavingNota(false)
-    }
+  async function handleGuardarClase(claseId) {
+  setSavingNota(true);
+  setMsg(null);
+  try {
+    await clasesAPI.editarClase(claseId, {
+      observaciones: textoNota,
+      tipo_clase:    editandoTipo,
+      fecha:         editandoFecha,
+    });
+    const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id });
+    setClases(fresh.data);
+    setEditandoNota(null);
+    setTextoNota('');
+    setEditandoTipo('');
+    setEditandoFecha('');
+    setMsg({ type: 'ok', text: 'Clase actualizada correctamente' });
+  } catch (e) {
+    setMsg({ type: 'error', text: e.response?.data?.error || 'Error al guardar clase' });
+  } finally {
+    setSavingNota(false);
   }
-
+}
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
