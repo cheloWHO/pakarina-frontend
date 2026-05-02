@@ -357,6 +357,7 @@ export default function BebesPage() {
   const localId    = user?.local_id
 
   const [bebes,       setBebes]       = useState([])
+  const [filtroLocal, setFiltroLocal] = useState('')
   const [grupos,      setGrupos]      = useState([])
   const [loading,     setLoading]     = useState(true)
   const [showForm,    setShowForm]    = useState(false)
