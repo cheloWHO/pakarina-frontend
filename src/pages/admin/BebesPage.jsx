@@ -101,7 +101,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     }
   }
 
-  async function handleAgregarClases(planId) {
+  async function handleGuardarClase(claseId)
     if (!clasesExtra || parseInt(clasesExtra) < 1) return
     setSavingExtra(true)
     setMsg(null)
