@@ -142,6 +142,21 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     }
   }
 
+  async function handleEliminarClase(claseId) {
+  if (!window.confirm('¿Seguro que quieres eliminar esta clase? Se devolverá al plan.')) return
+  setMsg(null)
+  try {
+    await clasesAPI.eliminar(claseId)
+    const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id })
+    setClases(fresh.data)
+    const freshPlanes = await planesAPI.listar({ bebe_id: bebeInicial.id })
+    setPlanes(freshPlanes.data)
+    setMsg({ type: 'ok', text: 'Clase eliminada y devuelta al plan' })
+  } catch (e) {
+    setMsg({ type: 'error', text: e.response?.data?.error || 'Error al eliminar clase' })
+  }
+}
+  
   function cancelarEdicionClase() {
     setEditandoNota(null)
     setTextoNota('')
