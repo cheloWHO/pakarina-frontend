@@ -90,7 +90,7 @@ export default function ClasesPage() {
 
       {planes.length === 0
         ? <Empty message="No hay planes activos en este local" />
-        : planes.map(p => {
+        : planesFiltrados.map(p => {
           const dias  = diasParaVencer(p.fecha_vencimiento)
           const tipo  = tipoSel[p.id]   || 'piso'
           const fecha = fechaSel[p.id]  || ''
