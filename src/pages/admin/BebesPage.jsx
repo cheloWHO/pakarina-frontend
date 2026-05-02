@@ -36,8 +36,6 @@ const LOCALES = [
 // ─────────────────────────────────────────
 function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [bebe,        setBebe]        = useState({ ...bebeInicial })
-  const [bebes,       setBebes]       = useState([])
-  const [filtroLocal, setFiltroLocal] = useState('')
   const [planes,      setPlanes]      = useState([])
   const [clases,      setClases]      = useState([])
   const [saving,      setSaving]      = useState(false)
