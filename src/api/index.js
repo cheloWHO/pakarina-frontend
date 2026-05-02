@@ -22,9 +22,9 @@ export const planesAPI = {
 }
 // CLASES
 export const clasesAPI = {
-  listar:     (params)               => api.get('/api/clases', { params }),
-  marcar:     (data)                 => api.post('/api/clases', data),
-  editarClase: (id, body)            => api.patch(`/api/clases/${id}`, body), 
+  listar:      (params) => api.get('/api/clases', { params }),
+  marcar:      (data)   => api.post('/api/clases', data),
+  editarClase: (id, body) => api.patch(`/api/clases/${id}`, body), 
 }
 // FINANZAS
 export const finanzasAPI = {
