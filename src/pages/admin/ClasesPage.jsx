@@ -59,14 +59,18 @@ export default function ClasesPage() {
       setMarking(null)
     }
   }
-
+  
+  const planesFiltrados = filtroLocal
+  ? planes.filter(p => p.local_id === parseInt(filtroLocal))
+  : planes
+  
   if (loading) return <Spinner />
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
       <div>
         <h2 style={{ fontSize:'20px', fontWeight:600 }}>Control de clases</h2>
-        <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{planes.length} planes activos hoy</p>
+        <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{planesFiltrados.length} planes activos hoy</p>
       </div>
 
       {msg && (
