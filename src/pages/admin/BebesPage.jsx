@@ -342,16 +342,23 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                     <span style={{ fontSize:'12px', color: c.observaciones ? 'var(--gray-900)' : 'var(--gray-400)', flex:1, lineHeight:'1.5' }}>
                       {c.observaciones || 'Sin nota'}
                     </span>
-                    <Btn size="sm" variant="ghost"
-                      onClick={() => {
-                        setEditandoNota(c.id)
-                        setTextoNota(c.observaciones || '')
-                        setEditandoTipo(c.tipo_clase || '')
-                        setEditandoFecha(c.fecha ? c.fecha.split('T')[0] : '')
-                      }}
-                      style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', flexShrink:0 }}>
-                      ✏️
-                    </Btn>
+                    <div style={{ display:'flex', gap:'4px', flexShrink:0 }}>
+  <Btn size="sm" variant="ghost"
+    onClick={() => {
+      setEditandoNota(c.id)
+      setTextoNota(c.observaciones || '')
+      setEditandoTipo(c.tipo_clase || '')
+      setEditandoFecha(c.fecha ? c.fecha.split('T')[0] : '')
+    }}
+    style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap' }}>
+    ✏️
+  </Btn>
+  <Btn size="sm" variant="ghost"
+    onClick={() => handleEliminarClase(c.id)}
+    style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', color:'var(--danger)' }}>
+    🗑️
+  </Btn>
+</div>
                   </div>
                 )}
               </div>
