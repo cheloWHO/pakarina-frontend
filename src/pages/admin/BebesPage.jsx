@@ -194,7 +194,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
           <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
             <label style={{ fontSize:'12px', color:'var(--gray-600)', fontWeight:500 }}>Edad</label>
             <div style={{ height:'38px', display:'flex', alignItems:'center' }}>
-              <Badge color="green">{edadMeses(bebe.fecha_nacimiento)} meses</Badge>
+              <Badge color="green">{edadMeses(bebe.fecha_nacimiento)}</Badge>
             </div>
           </div>
           <Input label="Nombre del tutor/a" value={bebe.nombre_tutor}
@@ -542,7 +542,7 @@ export default function BebesPage() {
                     <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
                       <label style={{ fontSize:'12px', color:'var(--gray-600)', fontWeight:500 }}>Edad</label>
                       <div style={{ height:'38px', display:'flex', alignItems:'center' }}>
-                        {bebe.fecha_nacimiento ? <Badge color="green">{edadMeses(bebe.fecha_nacimiento)} meses</Badge> : <span style={{ color:'var(--gray-400)', fontSize:'13px' }}>— meses</span>}
+                        <Badge color="green">{edadMeses(bebe.fecha_nacimiento)}</Badge> : <span style={{ color:'var(--gray-400)', fontSize:'13px' }}>— meses</span>}
                       </div>
                     </div>
                     {esGlobal && (
