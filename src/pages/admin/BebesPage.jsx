@@ -234,8 +234,10 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
 
       {/* Planes */}
       <Card>
-        <div style={{ fontWeight:600, fontSize:'14px', marginBottom:'1rem' }}>Planes</div>
-        {planes.length === 0 ? (
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
+        <div style={{ fontWeight:600, fontSize:'14px' }}>Planes</div>
+        <Btn size="sm" onClick={() => setShowNuevoPlan(s => !s)}>+ Nuevo plan</Btn>
+      </div>
           <Empty message="Sin planes registrados" />
         ) : (
           planes.map(p => (
