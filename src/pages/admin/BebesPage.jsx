@@ -51,6 +51,12 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [editandoFecha, setEditandoFecha] = useState('')
   const [textoNota,     setTextoNota]     = useState('')
   const [savingNota,    setSavingNota]    = useState(false)
+  const [showNuevoPlan, setShowNuevoPlan] = useState(false)
+  const [nuevoPlanSrvId,  setNuevoPlanSrvId]  = useState(null)
+  const [nuevoPlanMetodo, setNuevoPlanMetodo] = useState('efectivo')
+  const [nuevoPlanRef,    setNuevoPlanRef]    = useState('')
+  const [nuevoPlanFecha,  setNuevoPlanFecha]  = useState('')
+  const [savingNuevoPlan, setSavingNuevoPlan] = useState(false)
 
   useEffect(() => {
     planesAPI.listar({ bebe_id: bebeInicial.id })
