@@ -31,9 +31,6 @@ const LOCALES = [
   { id: 2, nombre: 'Florida (Norte)' },
 ]
 
-// ─────────────────────────────────────────
-// Pantalla de detalle de un bebé
-// ─────────────────────────────────────────
 function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [bebe,        setBebe]        = useState({ ...bebeInicial })
   const [planes,      setPlanes]      = useState([])
@@ -51,7 +48,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [editandoFecha, setEditandoFecha] = useState('')
   const [textoNota,     setTextoNota]     = useState('')
   const [savingNota,    setSavingNota]    = useState(false)
-  const [showNuevoPlan, setShowNuevoPlan] = useState(false)
+  const [showNuevoPlan,   setShowNuevoPlan]   = useState(false)
   const [nuevoPlanSrvId,  setNuevoPlanSrvId]  = useState(null)
   const [nuevoPlanMetodo, setNuevoPlanMetodo] = useState('efectivo')
   const [nuevoPlanRef,    setNuevoPlanRef]    = useState('')
@@ -68,8 +65,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   }, [bebeInicial.id])
 
   async function handleGuardar() {
-    setSaving(true)
-    setMsg(null)
+    setSaving(true); setMsg(null)
     try {
       await bebesAPI.actualizar(bebe.id, {
         nombre_completo:        bebe.nombre_completo,
@@ -84,50 +80,39 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       onSaved()
     } catch (e) {
       setMsg({ type: 'error', text: e.response?.data?.error || 'Error al guardar' })
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   async function handleEditarFecha(planId) {
     if (!nuevaFecha) return
-    setSavingFecha(true)
-    setMsg(null)
+    setSavingFecha(true); setMsg(null)
     try {
       await planesAPI.editarFecha(planId, nuevaFecha)
       const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
       setPlanes(fresh.data)
-      setNuevaFecha('')
-      setPlanIdFecha(null)
+      setNuevaFecha(''); setPlanIdFecha(null)
       setMsg({ type: 'ok', text: 'Fecha de inicio actualizada correctamente' })
     } catch (e) {
       setMsg({ type: 'error', text: e.response?.data?.error || 'Error al actualizar fecha' })
-    } finally {
-      setSavingFecha(false)
-    }
+    } finally { setSavingFecha(false) }
   }
 
   async function handleAgregarClases(planId) {
     if (!clasesExtra || parseInt(clasesExtra) < 1) return
-    setSavingExtra(true)
-    setMsg(null)
+    setSavingExtra(true); setMsg(null)
     try {
       await planesAPI.agregarClases(planId, parseInt(clasesExtra))
       const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
       setPlanes(fresh.data)
-      setClasesExtra('')
-      setPlanIdExtra(null)
+      setClasesExtra(''); setPlanIdExtra(null)
       setMsg({ type: 'ok', text: `${clasesExtra} clases agregadas correctamente` })
     } catch (e) {
       setMsg({ type: 'error', text: e.response?.data?.error || 'Error al agregar clases' })
-    } finally {
-      setSavingExtra(false)
-    }
+    } finally { setSavingExtra(false) }
   }
 
   async function handleGuardarClase(claseId) {
-    setSavingNota(true)
-    setMsg(null)
+    setSavingNota(true); setMsg(null)
     try {
       await clasesAPI.editarClase(claseId, {
         observaciones: textoNota,
@@ -136,83 +121,54 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       })
       const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id })
       setClases(fresh.data)
-      setEditandoNota(null)
-      setTextoNota('')
-      setEditandoTipo('')
-      setEditandoFecha('')
+      setEditandoNota(null); setTextoNota(''); setEditandoTipo(''); setEditandoFecha('')
       setMsg({ type: 'ok', text: 'Clase actualizada correctamente' })
     } catch (e) {
       setMsg({ type: 'error', text: e.response?.data?.error || 'Error al guardar clase' })
-    } finally {
-      setSavingNota(false)
+    } finally { setSavingNota(false) }
+  }
+
+  async function handleEliminarClase(claseId) {
+    if (!window.confirm('¿Seguro que quieres eliminar esta clase? Se devolverá al plan.')) return
+    setMsg(null)
+    try {
+      await clasesAPI.eliminar(claseId)
+      const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id })
+      setClases(fresh.data)
+      const freshPlanes = await planesAPI.listar({ bebe_id: bebeInicial.id })
+      setPlanes(freshPlanes.data)
+      setMsg({ type: 'ok', text: 'Clase eliminada y devuelta al plan' })
+    } catch (e) {
+      setMsg({ type: 'error', text: e.response?.data?.error || 'Error al eliminar clase' })
     }
   }
 
-  async function handleEliminarClase(claseId) {
-  if (!window.confirm('¿Seguro que quieres eliminar esta clase? Se devolverá al plan.')) return
-  setMsg(null)
-  try {
-    await clasesAPI.eliminar(claseId)
-    const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id })
-    setClases(fresh.data)
-    const freshPlanes = await planesAPI.listar({ bebe_id: bebeInicial.id })
-    setPlanes(freshPlanes.data)
-    setMsg({ type: 'ok', text: 'Clase eliminada y devuelta al plan' })
-  } catch (e) {
-    setMsg({ type: 'error', text: e.response?.data?.error || 'Error al eliminar clase' })
-  }
-}
-  
-  async function handleEliminarClase(claseId) {
-  if (!window.confirm('¿Seguro que quieres eliminar esta clase? Se devolverá al plan.')) return
-  setMsg(null)
-  try {
-    await clasesAPI.eliminar(claseId)
-    const fresh = await clasesAPI.listar({ bebe_id: bebeInicial.id })
-    setClases(fresh.data)
-    const freshPlanes = await planesAPI.listar({ bebe_id: bebeInicial.id })
-    setPlanes(freshPlanes.data)
-    setMsg({ type: 'ok', text: 'Clase eliminada y devuelta al plan' })
-  } catch (e) {
-    setMsg({ type: 'error', text: e.response?.data?.error || 'Error al eliminar clase' })
-  }
-}
-
   async function handleNuevoPlan() {
-  if (!nuevoPlanSrvId) return
-  setSavingNuevoPlan(true)
-  setMsg(null)
-  const srv = SERVICIOS.find(s => s.id === nuevoPlanSrvId)
-  try {
-    await planesAPI.registrarPago({
-      local_id:      bebe.local_id,
-      bebe_id:       bebeInicial.id,
-      servicio_id:   nuevoPlanSrvId,
-      metodo_pago:   nuevoPlanMetodo,
-      banco_destino: BANCO_POR_METODO[nuevoPlanMetodo],
-      referencia:    nuevoPlanRef || null,
-      fecha_inicio:  nuevoPlanFecha || null,
-    })
-    const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
-    setPlanes(fresh.data)
-    setShowNuevoPlan(false)
-    setNuevoPlanSrvId(null)
-    setNuevoPlanMetodo('efectivo')
-    setNuevoPlanRef('')
-    setNuevoPlanFecha('')
-    setMsg({ type: 'ok', text: 'Plan registrado correctamente' })
-  } catch (e) {
-    setMsg({ type: 'error', text: e.response?.data?.error || 'Error al registrar plan' })
-  } finally {
-    setSavingNuevoPlan(false)
+    if (!nuevoPlanSrvId) return
+    setSavingNuevoPlan(true); setMsg(null)
+    try {
+      await planesAPI.registrarPago({
+        local_id:      bebe.local_id,
+        bebe_id:       bebeInicial.id,
+        servicio_id:   nuevoPlanSrvId,
+        metodo_pago:   nuevoPlanMetodo,
+        banco_destino: BANCO_POR_METODO[nuevoPlanMetodo],
+        referencia:    nuevoPlanRef || null,
+        fecha_inicio:  nuevoPlanFecha || null,
+      })
+      const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
+      setPlanes(fresh.data)
+      setShowNuevoPlan(false)
+      setNuevoPlanSrvId(null); setNuevoPlanMetodo('efectivo')
+      setNuevoPlanRef(''); setNuevoPlanFecha('')
+      setMsg({ type: 'ok', text: 'Plan registrado correctamente' })
+    } catch (e) {
+      setMsg({ type: 'error', text: e.response?.data?.error || 'Error al registrar plan' })
+    } finally { setSavingNuevoPlan(false) }
   }
-}
-  
+
   function cancelarEdicionClase() {
-    setEditandoNota(null)
-    setTextoNota('')
-    setEditandoTipo('')
-    setEditandoFecha('')
+    setEditandoNota(null); setTextoNota(''); setEditandoTipo(''); setEditandoFecha('')
   }
 
   return (
@@ -271,42 +227,45 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       {/* Planes */}
       <Card>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
-        <div style={{ fontWeight:600, fontSize:'14px' }}>Planes</div>
-        <Btn size="sm" onClick={() => setShowNuevoPlan(s => !s)}>+ Nuevo plan</Btn>
-      </div>
+          <div style={{ fontWeight:600, fontSize:'14px' }}>Planes</div>
+          <Btn size="sm" onClick={() => setShowNuevoPlan(s => !s)}>+ Nuevo plan</Btn>
+        </div>
+
         {showNuevoPlan && (
-  <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px', marginBottom:'1rem' }}>
-    <div style={{ fontWeight:600, fontSize:'13px', marginBottom:'12px' }}>Registrar nuevo plan</div>
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', marginBottom:'12px' }}>
-      {SERVICIOS.map(s => (
-        <div key={s.id} onClick={() => setNuevoPlanSrvId(s.id)}
-          style={{ border: nuevoPlanSrvId === s.id ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: nuevoPlanSrvId === s.id ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-md)', padding:'8px', cursor:'pointer' }}>
-          <div style={{ fontSize:'11px', fontWeight:600 }}>{s.nombre}</div>
-          <div style={{ fontSize:'10px', color:'var(--gray-400)' }}>{s.clases} clase{s.clases>1?'s':''} · {s.vigencia ? s.vigencia+' días' : 'sin vigencia'}</div>
-          <div style={{ fontSize:'13px', fontWeight:600, color:'var(--accent)' }}>${s.precio.toFixed(2)}</div>
-        </div>
-      ))}
-    </div>
-    <div style={{ display:'flex', flexWrap:'wrap', gap:'8px', marginBottom:'12px' }}>
-      {Object.entries(METODO_LABEL).map(([key, label]) => (
-        <div key={key} onClick={() => setNuevoPlanMetodo(key)}
-          style={{ border: nuevoPlanMetodo === key ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: nuevoPlanMetodo === key ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-sm)', padding:'5px 10px', fontSize:'11px', cursor:'pointer', fontWeight: nuevoPlanMetodo === key ? 600 : 400, color: nuevoPlanMetodo === key ? 'var(--accent)' : 'var(--gray-600)' }}>
-          {label}
-        </div>
-      ))}
-    </div>
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'12px' }}>
-      <Input label="Fecha de inicio (opcional)" type="date" value={nuevoPlanFecha}
-        onChange={e => setNuevoPlanFecha(e.target.value)} />
-      <Input label="Referencia (opcional)" value={nuevoPlanRef}
-        onChange={e => setNuevoPlanRef(e.target.value)} placeholder="TRF-001" />
-    </div>
-    <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
-      <Btn variant="ghost" onClick={() => setShowNuevoPlan(false)}>Cancelar</Btn>
-      <Btn onClick={handleNuevoPlan} loading={savingNuevoPlan} disabled={!nuevoPlanSrvId}>Registrar plan</Btn>
-    </div>
-  </div>
-)}
+          <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px', marginBottom:'1rem' }}>
+            <div style={{ fontWeight:600, fontSize:'13px', marginBottom:'12px' }}>Registrar nuevo plan</div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', marginBottom:'12px' }}>
+              {SERVICIOS.map(s => (
+                <div key={s.id} onClick={() => setNuevoPlanSrvId(s.id)}
+                  style={{ border: nuevoPlanSrvId === s.id ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: nuevoPlanSrvId === s.id ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-md)', padding:'8px', cursor:'pointer' }}>
+                  <div style={{ fontSize:'11px', fontWeight:600 }}>{s.nombre}</div>
+                  <div style={{ fontSize:'10px', color:'var(--gray-400)' }}>{s.clases} clase{s.clases>1?'s':''} · {s.vigencia ? s.vigencia+' días' : 'sin vigencia'}</div>
+                  <div style={{ fontSize:'13px', fontWeight:600, color:'var(--accent)' }}>${s.precio.toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'8px', marginBottom:'12px' }}>
+              {Object.entries(METODO_LABEL).map(([key, label]) => (
+                <div key={key} onClick={() => setNuevoPlanMetodo(key)}
+                  style={{ border: nuevoPlanMetodo === key ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: nuevoPlanMetodo === key ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-sm)', padding:'5px 10px', fontSize:'11px', cursor:'pointer', fontWeight: nuevoPlanMetodo === key ? 600 : 400, color: nuevoPlanMetodo === key ? 'var(--accent)' : 'var(--gray-600)' }}>
+                  {label}
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'12px' }}>
+              <Input label="Fecha de inicio (opcional)" type="date" value={nuevoPlanFecha}
+                onChange={e => setNuevoPlanFecha(e.target.value)} />
+              <Input label="Referencia (opcional)" value={nuevoPlanRef}
+                onChange={e => setNuevoPlanRef(e.target.value)} placeholder="TRF-001" />
+            </div>
+            <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+              <Btn variant="ghost" onClick={() => setShowNuevoPlan(false)}>Cancelar</Btn>
+              <Btn onClick={handleNuevoPlan} loading={savingNuevoPlan} disabled={!nuevoPlanSrvId}>Registrar plan</Btn>
+            </div>
+          </div>
+        )}
+
+        {planes.length === 0 ? (
           <Empty message="Sin planes registrados" />
         ) : (
           planes.map(p => (
@@ -322,8 +281,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                       <div style={{ display:'flex', gap:'8px', alignItems:'flex-end', marginTop:'8px' }}>
                         <div style={{ flex:1 }}>
                           <Input label="Nueva fecha de inicio" type="date"
-                            value={nuevaFecha}
-                            onChange={e => setNuevaFecha(e.target.value)} />
+                            value={nuevaFecha} onChange={e => setNuevaFecha(e.target.value)} />
                         </div>
                         <Btn onClick={() => handleEditarFecha(p.id)} loading={savingFecha}>Guardar</Btn>
                         <Btn variant="ghost" onClick={() => { setPlanIdFecha(null); setNuevaFecha('') }}>Cancelar</Btn>
@@ -348,9 +306,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                   <div style={{ display:'flex', gap:'8px', alignItems:'flex-end' }}>
                     <div style={{ flex:1 }}>
                       <Input label="Clases extra a agregar" type="number" min="1"
-                        value={clasesExtra}
-                        onChange={e => setClasesExtra(e.target.value)}
-                        placeholder="Ej. 1" />
+                        value={clasesExtra} onChange={e => setClasesExtra(e.target.value)} placeholder="Ej. 1" />
                     </div>
                     <Btn onClick={() => handleAgregarClases(p.id)} loading={savingExtra}>Agregar</Btn>
                     <Btn variant="ghost" onClick={() => { setPlanIdExtra(null); setClasesExtra('') }}>Cancelar</Btn>
@@ -390,34 +346,18 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 {editandoNota === c.id ? (
                   <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
-                      <Input
-                        label="Fecha de la clase"
-                        type="date"
-                        value={editandoFecha}
-                        onChange={e => setEditandoFecha(e.target.value)}
-                      />
-                      <Select
-                        label="Tipo de clase"
-                        value={editandoTipo}
-                        onChange={e => setEditandoTipo(e.target.value)}
-                      >
+                      <Input label="Fecha de la clase" type="date" value={editandoFecha}
+                        onChange={e => setEditandoFecha(e.target.value)} />
+                      <Select label="Tipo de clase" value={editandoTipo}
+                        onChange={e => setEditandoTipo(e.target.value)}>
                         {Object.entries(TIPO_CLASE_LABEL).map(([key, label]) => (
                           <option key={key} value={key}>{label}</option>
                         ))}
                       </Select>
                     </div>
-                    <textarea
-                      value={textoNota}
-                      onChange={e => setTextoNota(e.target.value)}
-                      rows={3}
-                      placeholder="Nota (opcional)"
-                      style={{
-                        width:'100%', padding:'6px 8px', fontSize:'12px',
-                        border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)',
-                        resize:'vertical', fontFamily:'inherit', outline:'none',
-                        background:'#fff', color:'var(--gray-900)', boxSizing:'border-box',
-                      }}
-                    />
+                    <textarea value={textoNota} onChange={e => setTextoNota(e.target.value)}
+                      rows={3} placeholder="Nota (opcional)"
+                      style={{ width:'100%', padding:'6px 8px', fontSize:'12px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', resize:'vertical', fontFamily:'inherit', outline:'none', background:'#fff', color:'var(--gray-900)', boxSizing:'border-box' }} />
                     <div style={{ display:'flex', gap:'6px' }}>
                       <Btn size="sm" onClick={() => handleGuardarClase(c.id)} loading={savingNota}>Guardar</Btn>
                       <Btn size="sm" variant="ghost" onClick={cancelarEdicionClase}>Cancelar</Btn>
@@ -429,29 +369,17 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                       {c.observaciones || 'Sin nota'}
                     </span>
                     <div style={{ display:'flex', gap:'4px', flexShrink:0 }}>
-  <div style={{ display:'flex', gap:'4px', flexShrink:0 }}>
-  <Btn size="sm" variant="ghost"
-    onClick={() => {
-      setEditandoNota(c.id)
-      setTextoNota(c.observaciones || '')
-      setEditandoTipo(c.tipo_clase || '')
-      setEditandoFecha(c.fecha ? c.fecha.split('T')[0] : '')
-    }}
-    style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap' }}>
-    ✏️
-  </Btn>
-  <Btn size="sm" variant="ghost"
-    onClick={() => handleEliminarClase(c.id)}
-    style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', color:'var(--danger)' }}>
-    🗑️
-  </Btn>
-</div>
-  <Btn size="sm" variant="ghost"
-    onClick={() => handleEliminarClase(c.id)}
-    style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', color:'var(--danger)' }}>
-    🗑️
-  </Btn>
-</div>
+                      <Btn size="sm" variant="ghost"
+                        onClick={() => { setEditandoNota(c.id); setTextoNota(c.observaciones || ''); setEditandoTipo(c.tipo_clase || ''); setEditandoFecha(c.fecha ? c.fecha.split('T')[0] : '') }}
+                        style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap' }}>
+                        ✏️
+                      </Btn>
+                      <Btn size="sm" variant="ghost"
+                        onClick={() => handleEliminarClase(c.id)}
+                        style={{ fontSize:'11px', padding:'2px 6px', whiteSpace:'nowrap', color:'var(--danger)' }}>
+                        🗑️
+                      </Btn>
+                    </div>
                   </div>
                 )}
               </div>
@@ -463,9 +391,6 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   )
 }
 
-// ─────────────────────────────────────────
-// Página principal de Bebés
-// ─────────────────────────────────────────
 export default function BebesPage() {
   const { user }   = useAuth()
   const esGlobal   = !user?.local_id
@@ -512,36 +437,25 @@ export default function BebesPage() {
   const localIdFinal = esGlobal ? parseInt(bebe.local_id_form) : localId
 
   async function handleRegistrar() {
-    setSaving(true)
-    setFormErr('')
+    setSaving(true); setFormErr('')
     try {
       const bRes = await bebesAPI.crear({
-        ...bebe,
-        local_id: localIdFinal,
-        grupo_id: bebe.grupo_id || null,
+        ...bebe, local_id: localIdFinal, grupo_id: bebe.grupo_id || null,
       })
       const bebeId = bRes.data.bebe_id
       await planesAPI.registrarPago({
-        local_id:      localIdFinal,
-        bebe_id:       bebeId,
-        servicio_id:   srvId,
-        metodo_pago:   metodo,
-        banco_destino: BANCO_POR_METODO[metodo],
-        referencia:    ref || null,
-        fecha_inicio:  fechaInicio || null,
+        local_id: localIdFinal, bebe_id: bebeId, servicio_id: srvId,
+        metodo_pago: metodo, banco_destino: BANCO_POR_METODO[metodo],
+        referencia: ref || null, fecha_inicio: fechaInicio || null,
       })
       setSuccess({
-        email:    bRes.data.credenciales.email,
-        password: bRes.data.credenciales.password,
-        nombre:   bebe.nombre_completo,
-        servicio: srv.nombre,
+        email: bRes.data.credenciales.email, password: bRes.data.credenciales.password,
+        nombre: bebe.nombre_completo, servicio: srv.nombre,
       })
       loadBebes()
     } catch (e) {
       setFormErr(e.response?.data?.error || 'Error al registrar')
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   function resetForm() {
@@ -555,9 +469,9 @@ export default function BebesPage() {
     (!esGlobal || bebe.local_id_form)
 
   const bebesFiltrados = filtroLocal
-  ? bebes.filter(b => b.local_id === parseInt(filtroLocal))
-  : bebes
-  
+    ? bebes.filter(b => b.local_id === parseInt(filtroLocal))
+    : bebes
+
   if (loading) return <Spinner />
 
   if (bebeDetalle) {
@@ -574,22 +488,22 @@ export default function BebesPage() {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'10px' }}>
-  <div>
-    <h2 style={{ fontSize:'20px', fontWeight:600 }}>Bebés</h2>
-    <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{bebesFiltrados.length} registrados</p>
-  </div>
-  <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
-    {esGlobal && (
-      <select value={filtroLocal} onChange={e => setFiltroLocal(e.target.value)}
-        style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }}>
-        <option value="">Todos</option>
-        <option value="1">Villaflora</option>
-        <option value="2">Florida</option>
-      </select>
-    )}
-    <Btn onClick={() => { setShowForm(true); setSuccess(null) }}>+ Registrar bebé</Btn>
-  </div>
-</div>
+        <div>
+          <h2 style={{ fontSize:'20px', fontWeight:600 }}>Bebés</h2>
+          <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{bebesFiltrados.length} registrados</p>
+        </div>
+        <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+          {esGlobal && (
+            <select value={filtroLocal} onChange={e => setFiltroLocal(e.target.value)}
+              style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }}>
+              <option value="">Todos</option>
+              <option value="1">Villaflora</option>
+              <option value="2">Florida</option>
+            </select>
+          )}
+          <Btn onClick={() => { setShowForm(true); setSuccess(null) }}>+ Registrar bebé</Btn>
+        </div>
+      </div>
 
       {showForm && (
         <Card>
