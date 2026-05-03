@@ -19,15 +19,8 @@ export default function PortalLayout() {
         display:'flex', alignItems:'center', justifyContent:'space-between',
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-          <div style={{
-            width:'32px', height:'32px', borderRadius:'50%',
-            background:'var(--brand-light)', display:'flex',
-            alignItems:'center', justifyContent:'center', fontSize:'16px',
-          }}>🐣</div>
-          <div>
-            <div style={{ fontWeight:600, fontSize:'14px', color:'var(--brand-dark)' }}>Pakarina Center</div>
-            <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>Portal de papás</div>
-          </div>
+          <img src="/logo-pakarina-center.png" alt="Pakarina Center" style={{ height:'40px', objectFit:'contain' }} />
+<div style={{ fontSize:'11px', color:'var(--gray-400)' }}>Portal de papás</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
           <span style={{ fontSize:'13px', color:'var(--gray-600)' }}>{user?.nombre}</span>
