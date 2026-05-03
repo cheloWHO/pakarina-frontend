@@ -36,7 +36,7 @@ export default function AdminLayout() {
       }}
         className="sidebar-desktop">
         <div style={{ padding:'0 1.25rem 1.5rem', borderBottom:'1px solid var(--gray-100)' }}>
-          <div style={{ fontWeight:600, fontSize:'15px', color:'var(--brand-dark)' }}>Pakarina Center</div>
+          <img src="/logo-pakarina-center.png" alt="Pakarina Center" style={{ height:'36px', objectFit:'contain' }} />
           <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>
             {user?.local_id ? (user.local_id === 1 ? 'Villaflora' : 'Florida') : 'Global'}
           </div>
