@@ -16,8 +16,12 @@ export function edadMeses(fechaNac) {
   if (!fechaNac) return null
   const nac = new Date(fechaNac)
   const hoy = new Date()
-  return (hoy.getFullYear() - nac.getFullYear()) * 12 +
-         (hoy.getMonth() - nac.getMonth())
+  const meses = (hoy.getFullYear() - nac.getFullYear()) * 12 +
+                (hoy.getMonth() - nac.getMonth())
+  if (meses < 24) return `${meses} meses`
+  const años = Math.floor(meses / 12)
+  const m    = meses % 12
+  return m > 0 ? `${años} años ${m} meses` : `${años} años`
 }
 // Días para vencer (puede ser negativo si ya venció)
 export function diasParaVencer(fechaVenc) {
