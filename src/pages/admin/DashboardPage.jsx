@@ -121,7 +121,7 @@ export default function DashboardPage() {
                   <div>
                     <div style={{ fontWeight: 500, fontSize: '13px' }}>{p.bebe}</div>
                     <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>
-                      {p.servicio} · vence {fmtFecha(p.fecha_vencimiento)}
+                      {p.servicio} · vence {fmtFecha(p.fecha_vencimiento)}{esGlobal ? ` · ${p.local_id === 1 ? 'Villaflora' : 'Florida'}` : ''}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
