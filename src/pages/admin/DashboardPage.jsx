@@ -90,7 +90,15 @@ export default function DashboardPage() {
             <StatCard label="Balance del mes" value={fmtMoney(resumen?.balance)} color={resumen?.balance >= 0 ? 'green' : 'red'} />
           </>
         )}
-        <StatCard label="Planes activos" value={planesActivos} sub="en este local" />
+        {esGlobal ? (
+          <>
+            <StatCard label="Planes activos Villaflora" value={planesVillaflora} color="green" />
+            <StatCard label="Planes activos Florida" value={planesFlorida} color="green" />
+            <StatCard label="Total planes activos" value={planesActivos} />
+          </>
+) : (
+  <StatCard label="Planes activos" value={planesActivos} sub="en este local" />
+)}
       </div>
 
       <Card>
