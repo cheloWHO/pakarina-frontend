@@ -177,6 +177,36 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     setMsg({ type: 'error', text: e.response?.data?.error || 'Error al eliminar clase' })
   }
 }
+
+  async function handleNuevoPlan() {
+  if (!nuevoPlanSrvId) return
+  setSavingNuevoPlan(true)
+  setMsg(null)
+  const srv = SERVICIOS.find(s => s.id === nuevoPlanSrvId)
+  try {
+    await planesAPI.registrarPago({
+      local_id:      bebe.local_id,
+      bebe_id:       bebeInicial.id,
+      servicio_id:   nuevoPlanSrvId,
+      metodo_pago:   nuevoPlanMetodo,
+      banco_destino: BANCO_POR_METODO[nuevoPlanMetodo],
+      referencia:    nuevoPlanRef || null,
+      fecha_inicio:  nuevoPlanFecha || null,
+    })
+    const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
+    setPlanes(fresh.data)
+    setShowNuevoPlan(false)
+    setNuevoPlanSrvId(null)
+    setNuevoPlanMetodo('efectivo')
+    setNuevoPlanRef('')
+    setNuevoPlanFecha('')
+    setMsg({ type: 'ok', text: 'Plan registrado correctamente' })
+  } catch (e) {
+    setMsg({ type: 'error', text: e.response?.data?.error || 'Error al registrar plan' })
+  } finally {
+    setSavingNuevoPlan(false)
+  }
+}
   
   function cancelarEdicionClase() {
     setEditandoNota(null)
