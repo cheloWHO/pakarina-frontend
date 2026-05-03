@@ -274,6 +274,39 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
         <div style={{ fontWeight:600, fontSize:'14px' }}>Planes</div>
         <Btn size="sm" onClick={() => setShowNuevoPlan(s => !s)}>+ Nuevo plan</Btn>
       </div>
+        {showNuevoPlan && (
+  <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px', marginBottom:'1rem' }}>
+    <div style={{ fontWeight:600, fontSize:'13px', marginBottom:'12px' }}>Registrar nuevo plan</div>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', marginBottom:'12px' }}>
+      {SERVICIOS.map(s => (
+        <div key={s.id} onClick={() => setNuevoPlanSrvId(s.id)}
+          style={{ border: nuevoPlanSrvId === s.id ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: nuevoPlanSrvId === s.id ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-md)', padding:'8px', cursor:'pointer' }}>
+          <div style={{ fontSize:'11px', fontWeight:600 }}>{s.nombre}</div>
+          <div style={{ fontSize:'10px', color:'var(--gray-400)' }}>{s.clases} clase{s.clases>1?'s':''} · {s.vigencia ? s.vigencia+' días' : 'sin vigencia'}</div>
+          <div style={{ fontSize:'13px', fontWeight:600, color:'var(--accent)' }}>${s.precio.toFixed(2)}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{ display:'flex', flexWrap:'wrap', gap:'8px', marginBottom:'12px' }}>
+      {Object.entries(METODO_LABEL).map(([key, label]) => (
+        <div key={key} onClick={() => setNuevoPlanMetodo(key)}
+          style={{ border: nuevoPlanMetodo === key ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: nuevoPlanMetodo === key ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-sm)', padding:'5px 10px', fontSize:'11px', cursor:'pointer', fontWeight: nuevoPlanMetodo === key ? 600 : 400, color: nuevoPlanMetodo === key ? 'var(--accent)' : 'var(--gray-600)' }}>
+          {label}
+        </div>
+      ))}
+    </div>
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'12px' }}>
+      <Input label="Fecha de inicio (opcional)" type="date" value={nuevoPlanFecha}
+        onChange={e => setNuevoPlanFecha(e.target.value)} />
+      <Input label="Referencia (opcional)" value={nuevoPlanRef}
+        onChange={e => setNuevoPlanRef(e.target.value)} placeholder="TRF-001" />
+    </div>
+    <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+      <Btn variant="ghost" onClick={() => setShowNuevoPlan(false)}>Cancelar</Btn>
+      <Btn onClick={handleNuevoPlan} loading={savingNuevoPlan} disabled={!nuevoPlanSrvId}>Registrar plan</Btn>
+    </div>
+  </div>
+)}
           <Empty message="Sin planes registrados" />
         ) : (
           planes.map(p => (
