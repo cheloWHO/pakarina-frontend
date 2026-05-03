@@ -671,7 +671,7 @@ export default function BebesPage() {
               <div>
                 <div style={{ fontWeight:500, fontSize:'13px' }}>{b.nombre_completo}</div>
                 <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>
-                  {b.edad_meses} meses · {b.nombre_tutor} · {b.whatsapp_representante} · {b.local_id === 1 ? 'Villaflora' : 'Florida'}
+                  {b.edad_meses < 24 ? `${b.edad_meses} meses` : `${Math.floor(b.edad_meses/12)} años${b.edad_meses%12 > 0 ? ` ${b.edad_meses%12} meses` : ''}`} · {b.nombre_tutor} · {b.whatsapp_representante} · {b.local_id === 1 ? 'Villaflora' : 'Florida'}
                 </div>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
