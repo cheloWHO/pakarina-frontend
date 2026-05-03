@@ -37,8 +37,11 @@ export default function DashboardPage() {
 
   if (loading) return <Spinner />
 
-  const alertas       = planes.filter(p => p.alerta_vencimiento)
-  const planesActivos = planes.length
+  const alertas          = planes.filter(p => p.alerta_vencimiento)
+  const planesActivos    = planes.length
+  const esGlobal         = !user?.local_id
+  const planesVillaflora = planes.filter(p => p.local_id === 1).length
+  const planesFlorida    = planes.filter(p => p.local_id === 2).length
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '900px' }}>
