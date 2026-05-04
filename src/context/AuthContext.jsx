@@ -8,21 +8,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-  const stored = localStorage.getItem('pakarina_user')
-  const token  = localStorage.getItem('pakarina_token')
-  if (stored && token) {
-    setUser(JSON.parse(stored))
-    // Refrescar datos del usuario desde el servidor
+  const token = localStorage.getItem('pakarina_token')
+  if (token) {
     authAPI.me()
       .then(({ data }) => {
-        setUser(data)
         localStorage.setItem('pakarina_user', JSON.stringify(data))
+        setUser(data)
       })
       .catch(() => {
-        // Token expirado — limpiar sesión
         localStorage.removeItem('pakarina_token')
         localStorage.removeItem('pakarina_user')
-        setUser(null)
       })
       .finally(() => setLoading(false))
   } else {
