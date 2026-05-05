@@ -3,7 +3,6 @@ import { planesAPI, clasesAPI, bebesAPI } from '../../api'
 import { fmtFecha, diasParaVencer, TIPO_CLASE_LABEL, edadMeses } from '../../utils'
 import { useAuth } from '../../context/AuthContext'
 import { Card, Badge, Spinner, Empty } from '../../components/ui'
-import { fmtFecha, diasParaVencer, TIPO_CLASE_LABEL, edadMeses } from '../../utils'
 
 export default function PortalPage() {
   const { user }   = useAuth()
@@ -20,9 +19,9 @@ export default function PortalPage() {
           clasesAPI.listar({ bebe_id: user?.bebe_id }),
           bebesAPI.obtener(user?.bebe_id),
         ])
-  setPlanes(pRes.data)
-  setHistorial(hRes.data)
-  setBebe(bRes.data)
+        setPlanes(pRes.data)
+        setHistorial(hRes.data)
+        setBebe(bRes.data)
       } catch(e) { console.error(e) }
       finally { setLoading(false) }
     }
@@ -36,7 +35,6 @@ export default function PortalPage() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.25rem' }}>
-      {/* Saludo */}
       <div style={{ paddingTop:'0.5rem' }}>
         <h2 style={{ fontSize:'18px', fontWeight:600 }}>Hola, {user?.nombre} 👋</h2>
         <p style={{ color:'var(--gray-400)', fontSize:'13px', marginTop:'2px' }}>
@@ -45,29 +43,29 @@ export default function PortalPage() {
       </div>
 
       {/* Datos del bebé */}
-{bebe && (
-  <Card>
-    <div style={{ fontWeight:600, fontSize:'14px', marginBottom:'1rem' }}>Datos del bebé</div>
-    <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-      {[
-        ['Nombre',           bebe.nombre_completo],
-        ['Fecha nacimiento', fmtFecha(bebe.fecha_nacimiento)],
-        ['Edad',             edadMeses(bebe.fecha_nacimiento)],
-        ['Tutor/a',          bebe.nombre_tutor],
-        ['WhatsApp',         bebe.whatsapp_representante],
-        ['Email',            bebe.email_representante],
-        ['Sucursal',         bebe.local_id === 1 ? 'Villaflora (Sur)' : 'Florida (Norte)'],
-        ['Grupo',            bebe.grupo_nombre || 'Sin asignar'],
-      ].map(([k, v]) => (
-        <div key={k} style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'6px 0', borderBottom:'1px solid var(--gray-100)' }}>
-          <span style={{ color:'var(--gray-400)', fontWeight:500 }}>{k}</span>
-          <span style={{ fontWeight:500, textAlign:'right' }}>{v}</span>
-        </div>
-      ))}
-    </div>
-  </Card>
-)}
-      
+      {bebe && (
+        <Card>
+          <div style={{ fontWeight:600, fontSize:'14px', marginBottom:'1rem' }}>Datos del bebé</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+            {[
+              ['Nombre',           bebe.nombre_completo],
+              ['Fecha nacimiento', fmtFecha(bebe.fecha_nacimiento)],
+              ['Edad',             edadMeses(bebe.fecha_nacimiento)],
+              ['Tutor/a',          bebe.nombre_tutor],
+              ['WhatsApp',         bebe.whatsapp_representante],
+              ['Email',            bebe.email_representante],
+              ['Sucursal',         bebe.local_id === 1 ? 'Villaflora (Sur)' : 'Florida (Norte)'],
+              ['Grupo',            bebe.grupo_nombre || 'Sin asignar'],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'6px 0', borderBottom:'1px solid var(--gray-100)' }}>
+                <span style={{ color:'var(--gray-400)', fontWeight:500 }}>{k}</span>
+                <span style={{ fontWeight:500, textAlign:'right' }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Plan activo */}
       {planActivo ? (
         <Card>
@@ -82,8 +80,6 @@ export default function PortalPage() {
               </Badge>
             )}
           </div>
-
-          {/* Clases restantes — visual */}
           <div style={{ textAlign:'center', margin:'1rem 0' }}>
             <div style={{ fontSize:'48px', fontWeight:700, color:'var(--brand-dark)', lineHeight:1 }}>
               {planActivo.clases_restantes}
@@ -92,8 +88,6 @@ export default function PortalPage() {
               clases restantes de {planActivo.clases_total}
             </div>
           </div>
-
-          {/* Barra de progreso */}
           <div style={{ height:'8px', background:'var(--gray-100)', borderRadius:'99px', overflow:'hidden', marginBottom:'1rem' }}>
             <div style={{
               height:'100%', borderRadius:'99px', background:'var(--brand)',
@@ -101,21 +95,14 @@ export default function PortalPage() {
               transition:'width .4s',
             }} />
           </div>
-
-          {/* Fechas */}
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', color:'var(--gray-400)' }}>
             <span>Inicio: {fmtFecha(planActivo.fecha_inicio)}</span>
             {planActivo.fecha_vencimiento && (
               <span>Vence: {fmtFecha(planActivo.fecha_vencimiento)}</span>
             )}
           </div>
-
-          {/* Alerta vencimiento próximo */}
           {dias !== null && dias >= 0 && dias <= 5 && (
-            <div style={{
-              marginTop:'12px', background:'var(--warn-light)', color:'var(--warn)',
-              borderRadius:'var(--radius-sm)', padding:'10px 12px', fontSize:'13px',
-            }}>
+            <div style={{ marginTop:'12px', background:'var(--warn-light)', color:'var(--warn)', borderRadius:'var(--radius-sm)', padding:'10px 12px', fontSize:'13px' }}>
               Tu plan vence pronto. Comunícate con el centro para renovar.
             </div>
           )}
@@ -133,10 +120,7 @@ export default function PortalPage() {
           <Empty message="Sin clases registradas aún" />
         ) : (
           historial.slice(0, 20).map(c => (
-            <div key={c.id} style={{
-              display:'flex', justifyContent:'space-between', alignItems:'center',
-              padding:'9px 0', borderBottom:'1px solid var(--gray-100)', fontSize:'13px',
-            }}>
+            <div key={c.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'9px 0', borderBottom:'1px solid var(--gray-100)', fontSize:'13px' }}>
               <div>
                 <div style={{ fontWeight:500 }}>{TIPO_CLASE_LABEL[c.tipo_clase] || c.tipo_clase}</div>
                 <div style={{ fontSize:'11px', color:'var(--gray-400)' }}>{fmtFecha(c.fecha)}</div>
@@ -150,10 +134,7 @@ export default function PortalPage() {
       </Card>
 
       {/* Contacto */}
-      <div style={{
-        background:'var(--brand-light)', borderRadius:'var(--radius-md)',
-        padding:'14px 16px', fontSize:'13px', color:'var(--brand-dark)',
-      }}>
+      <div style={{ background:'var(--brand-light)', borderRadius:'var(--radius-md)', padding:'14px 16px', fontSize:'13px', color:'var(--brand-dark)' }}>
         ¿Consultas? Escríbenos al WhatsApp del centro
       </div>
     </div>
