@@ -3,7 +3,7 @@ import { planesAPI, clasesAPI, bebesAPI } from '../../api'
 import { fmtFecha, diasParaVencer, TIPO_CLASE_LABEL, edadMeses } from '../../utils'
 import { useAuth } from '../../context/AuthContext'
 import { Card, Badge, Spinner, Empty } from '../../components/ui'
-import { fmtFecha, diasParaVencer, TIPO_CLASE_LABEL } from '../../utils'
+import { fmtFecha, diasParaVencer, TIPO_CLASE_LABEL, edadMeses } from '../../utils'
 
 export default function PortalPage() {
   const { user }   = useAuth()
