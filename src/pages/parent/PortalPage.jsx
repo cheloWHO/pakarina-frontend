@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { planesAPI, clasesAPI } from '../../api'
+import { planesAPI, clasesAPI, bebesAPI } from '../../api'
+import { fmtFecha, diasParaVencer, TIPO_CLASE_LABEL, edadMeses } from '../../utils'
 import { useAuth } from '../../context/AuthContext'
 import { Card, Badge, Spinner, Empty } from '../../components/ui'
 import { fmtFecha, diasParaVencer, TIPO_CLASE_LABEL } from '../../utils'
