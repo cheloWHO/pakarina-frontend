@@ -8,6 +8,7 @@ export default function PortalPage() {
   const { user }   = useAuth()
   const [planes,   setPlanes]   = useState([])
   const [historial,setHistorial]= useState([])
+  const [bebe,     setBebe]     = useState(null)
   const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
