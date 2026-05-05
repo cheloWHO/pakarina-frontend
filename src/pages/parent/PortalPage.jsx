@@ -43,6 +43,30 @@ export default function PortalPage() {
         </p>
       </div>
 
+      {/* Datos del bebé */}
+{bebe && (
+  <Card>
+    <div style={{ fontWeight:600, fontSize:'14px', marginBottom:'1rem' }}>Datos del bebé</div>
+    <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+      {[
+        ['Nombre',           bebe.nombre_completo],
+        ['Fecha nacimiento', fmtFecha(bebe.fecha_nacimiento)],
+        ['Edad',             edadMeses(bebe.fecha_nacimiento)],
+        ['Tutor/a',          bebe.nombre_tutor],
+        ['WhatsApp',         bebe.whatsapp_representante],
+        ['Email',            bebe.email_representante],
+        ['Sucursal',         bebe.local_id === 1 ? 'Villaflora (Sur)' : 'Florida (Norte)'],
+        ['Grupo',            bebe.grupo_nombre || 'Sin asignar'],
+      ].map(([k, v]) => (
+        <div key={k} style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'6px 0', borderBottom:'1px solid var(--gray-100)' }}>
+          <span style={{ color:'var(--gray-400)', fontWeight:500 }}>{k}</span>
+          <span style={{ fontWeight:500, textAlign:'right' }}>{v}</span>
+        </div>
+      ))}
+    </div>
+  </Card>
+)}
+      
       {/* Plan activo */}
       {planActivo ? (
         <Card>
