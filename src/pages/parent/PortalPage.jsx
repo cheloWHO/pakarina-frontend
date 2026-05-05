@@ -14,12 +14,14 @@ export default function PortalPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [pRes, hRes] = await Promise.all([
+        const [pRes, hRes, bRes] = await Promise.all([
           planesAPI.listar({ bebe_id: user?.bebe_id }),
           clasesAPI.listar({ bebe_id: user?.bebe_id }),
+          bebesAPI.obtener(user?.bebe_id),
         ])
-        setPlanes(pRes.data)
-        setHistorial(hRes.data)
+  setPlanes(pRes.data)
+  setHistorial(hRes.data)
+  setBebe(bRes.data)
       } catch(e) { console.error(e) }
       finally { setLoading(false) }
     }
