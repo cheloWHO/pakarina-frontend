@@ -7,6 +7,7 @@ const NAV = [
   { to: '/admin/clases',     label: 'Clases',     icon: '◎' },
   { to: '/admin/finanzas',   label: 'Finanzas',   icon: '◇', soloFinanzas: true },
   { to: '/admin/inventario', label: 'Inventario', icon: '◫' },
+  { to: '/admin/calendario', label: 'Calendario',  icon: '◻' },
 ]
 
 const EMAILS_FINANZAS = ['mjuarez@pakarinacenter.com', 'ggordon@pakarinacenter.com']
