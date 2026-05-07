@@ -6,6 +6,7 @@ import AdminLayout    from './components/layout/AdminLayout'
 import DashboardPage  from './pages/admin/DashboardPage'
 import BebesPage      from './pages/admin/BebesPage'
 import ClasesPage     from './pages/admin/ClasesPage'
+import CalendarioPage from './pages/admin/CalendarioPage'
 import FinanzasPage   from './pages/admin/FinanzasPage'
 import InventarioPage from './pages/admin/InventarioPage'
 import PortalLayout   from './pages/parent/PortalLayout'
@@ -50,6 +51,7 @@ function AppRoutes() {
         <Route index        element={<DashboardPage />} />
         <Route path="bebes"      element={<BebesPage />} />
         <Route path="clases"     element={<ClasesPage />} />
+        <Route path="calendario" element={<CalendarioPage />} />
         <Route path="finanzas"   element={<FinanzasPage />} />
         <Route path="inventario" element={<InventarioPage />} />
       </Route>
