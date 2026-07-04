@@ -109,9 +109,15 @@ export default function InventarioPage() {
     setSaving(true); setMsg(null)
     try {
       await api.post('/api/inventario/productos', {
-        nombre:       nuevoProd.nombre,
-        precio_venta: parseFloat(nuevoProd.precio_venta),
-        stock_minimo: parseInt(nuevoProd.stock_minimo),
+        nombre:          nuevoProd.nombre,
+        precio_venta:    parseFloat(nuevoProd.precio_venta),
+        stock_minimo:    parseInt(nuevoProd.stock_minimo),
+        sku:             nuevoProd.sku || null,
+        descripcion:     nuevoProd.descripcion || null,
+        color:           nuevoProd.color || null,
+        foto_url:        nuevoProd.foto_url || null,
+        precio_unitario: nuevoProd.precio_unitario ? parseFloat(nuevoProd.precio_unitario) : null,
+        descuento:       nuevoProd.descuento ? parseFloat(nuevoProd.descuento) : 0,
       })
       setMsg({ type:'ok', text:'Producto creado correctamente' })
       setShowProd(false)
