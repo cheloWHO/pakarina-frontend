@@ -298,8 +298,8 @@ export default function InventarioPage() {
                   </div>
                   {descuentoPct > 0 && (
                     <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', padding:'4px 8px', marginTop:'4px', background:'var(--brand-light)', borderRadius:'var(--radius-sm)', color:'var(--brand-dark)' }}>
-                      <span>Descuento {descuentoPct}%</span>
-                      <span>-{fmtMoney(prodSel.precio_venta - precioConDesc)}</span>
+                      <span>Descuento ({descuentoPct}%)</span>
+                      <span>-{fmtMoney(descuentoMonto)}</span>
                     </div>
                   )}
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0', fontWeight:600 }}>
