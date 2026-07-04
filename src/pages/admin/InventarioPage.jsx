@@ -383,8 +383,16 @@ export default function InventarioPage() {
                   ? <tr><td colSpan="6" style={{ textAlign:'center', padding:'2rem', color:'var(--gray-400)' }}>Sin productos</td></tr>
                   : stockPorProducto.map(p => (
                     <tr key={p.id} style={{ borderBottom:'1px solid var(--gray-100)' }}>
-                      <td style={{ padding:'10px 0', fontWeight:500 }}>{p.nombre}</td>
+                      <td style={{ padding:'10px 0', fontWeight:500 }}>
+                        {p.foto_url && <img src={p.foto_url} alt={p.nombre} style={{ width:'32px', height:'32px', objectFit:'cover', borderRadius:'4px', marginRight:'8px', verticalAlign:'middle' }} />}
+                        {p.nombre}
+                        {p.descripcion && <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>{p.descripcion}</div>}
+                      </td>
+                      <td style={{ padding:'8px', color:'var(--gray-500)', fontSize:'12px' }}>{p.sku || '—'}</td>
+                      <td style={{ padding:'8px', color:'var(--gray-500)', fontSize:'12px' }}>{p.color || '—'}</td>
                       <td style={{ textAlign:'center', color:'var(--gray-400)' }}>{fmtMoney(p.precio_venta)}</td>
+                      <td style={{ textAlign:'center', color:'var(--gray-400)', fontSize:'12px' }}>{p.precio_unitario ? `$${parseFloat(p.precio_unitario).toFixed(2)}` : '—'}</td>
+                      <td style={{ textAlign:'center', fontSize:'12px' }}>{p.descuento > 0 ? <Badge color="blue">{p.descuento}%</Badge> : '—'}</td>
                       {p.ubicaciones.map(u => {
                         const bajo = u.cantidad <= p.stock_minimo
                         return (
