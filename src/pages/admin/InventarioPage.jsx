@@ -38,6 +38,7 @@ export default function InventarioPage() {
   const [showMov,    setShowMov]    = useState(false)
   const [showVenta,  setShowVenta]  = useState(false)
   const [showProd,   setShowProd]   = useState(false)
+  const [editProd,   setEditProd]   = useState(null)
 
   const [mov, setMov] = useState({
     producto_id:'', tipo:'entrada_proveedor',
@@ -132,6 +133,28 @@ export default function InventarioPage() {
     } finally { setSaving(false) }
   }
 
+  async function handleEditarProducto(e) {
+    e.preventDefault()
+    setSaving(true); setMsg(null)
+    try {
+      await api.patch(`/api/inventario/productos/${editProd.id}`, {
+        nombre:          editProd.nombre,
+        precio_venta:    parseFloat(editProd.precio_venta),
+        stock_minimo:    parseInt(editProd.stock_minimo),
+        sku:             editProd.sku || null,
+        descripcion:     editProd.descripcion || null,
+        color:           editProd.color || null,
+        foto_url:        editProd.foto_url || null,
+        precio_unitario: editProd.precio_unitario ? parseFloat(editProd.precio_unitario) : null,
+      })
+      setMsg({ type:'ok', text:'Producto actualizado correctamente' })
+      setEditProd(null)
+      load()
+    } catch(e) {
+      setMsg({ type:'error', text: e.response?.data?.error || 'Error al actualizar producto' })
+    } finally { setSaving(false) }
+  }
+
   const stockPorProducto = productos.map(p => ({
     ...p,
     ubicaciones: UBICACIONES.map(u => {
@@ -150,6 +173,44 @@ export default function InventarioPage() {
 
   if (loading) return <Spinner />
 
+  function CamposProducto({ data, setData }) {
+    return (
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+        <div style={{ gridColumn:'1/-1' }}>
+          <Input label="Nombre del producto" required value={data.nombre}
+            onChange={e => setData(p => ({...p, nombre: e.target.value}))}
+            placeholder="Ej. Air Free Neck Baby Float" />
+        </div>
+        <Input label="SKU / Item No." value={data.sku || ''}
+          onChange={e => setData(p => ({...p, sku: e.target.value}))}
+          placeholder="Ej. B510" />
+        <Input label="Color" value={data.color || ''}
+          onChange={e => setData(p => ({...p, color: e.target.value}))}
+          placeholder="Ej. pink" />
+        <Input label="Precio unitario USD (costo)" type="number" min="0" step="0.01"
+          value={data.precio_unitario || ''}
+          onChange={e => setData(p => ({...p, precio_unitario: e.target.value}))}
+          placeholder="Ej. 10.00" />
+        <Input label="Precio de venta ($)" type="number" min="0" step="0.01" required
+          value={data.precio_venta}
+          onChange={e => setData(p => ({...p, precio_venta: e.target.value}))} />
+        <Input label="Stock mínimo" type="number" min="0"
+          value={data.stock_minimo}
+          onChange={e => setData(p => ({...p, stock_minimo: e.target.value}))} />
+        <div style={{ gridColumn:'1/-1' }}>
+          <Input label="URL de foto" value={data.foto_url || ''}
+            onChange={e => setData(p => ({...p, foto_url: e.target.value}))}
+            placeholder="https://..." />
+        </div>
+        <div style={{ gridColumn:'1/-1' }}>
+          <Input label="Descripción" value={data.descripcion || ''}
+            onChange={e => setData(p => ({...p, descripcion: e.target.value}))}
+            placeholder="Ej. Donut neck float M size" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
 
@@ -160,9 +221,9 @@ export default function InventarioPage() {
           <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>Flujo: Proveedor → Bodega → Villaflora / Florida</p>
         </div>
         <div style={{ display:'flex', gap:'8px' }}>
-          <Btn variant="ghost" onClick={() => { setShowProd(s => !s); setShowMov(false); setShowVenta(false) }}>+ Producto</Btn>
-          <Btn variant="secondary" onClick={() => { setShowMov(s => !s); setShowProd(false); setShowVenta(false) }}>+ Movimiento</Btn>
-          <Btn onClick={() => { setShowVenta(s => !s); setShowProd(false); setShowMov(false) }}>+ Venta</Btn>
+          <Btn variant="ghost" onClick={() => { setShowProd(s => !s); setShowMov(false); setShowVenta(false); setEditProd(null) }}>+ Producto</Btn>
+          <Btn variant="secondary" onClick={() => { setShowMov(s => !s); setShowProd(false); setShowVenta(false); setEditProd(null) }}>+ Movimiento</Btn>
+          <Btn onClick={() => { setShowVenta(s => !s); setShowProd(false); setShowMov(false); setEditProd(null) }}>+ Venta</Btn>
         </div>
       </div>
 
@@ -173,42 +234,27 @@ export default function InventarioPage() {
         <Card>
           <div style={{ fontWeight:600, marginBottom:'1rem', fontSize:'14px' }}>Nuevo producto</div>
           <form onSubmit={handleCrearProducto} style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
-              <div style={{ gridColumn:'1/-1' }}>
-                <Input label="Nombre del producto" required value={nuevoProd.nombre}
-                  onChange={e => setNuevoProd(p => ({...p, nombre: e.target.value}))}
-                  placeholder="Ej. Air Free Neck Baby Float" />
-              </div>
-              <Input label="SKU / Item No." value={nuevoProd.sku}
-                onChange={e => setNuevoProd(p => ({...p, sku: e.target.value}))}
-                placeholder="Ej. B510" />
-              <Input label="Color" value={nuevoProd.color}
-                onChange={e => setNuevoProd(p => ({...p, color: e.target.value}))}
-                placeholder="Ej. pink" />
-              <Input label="Precio unitario USD (costo)" type="number" min="0" step="0.01"
-                value={nuevoProd.precio_unitario}
-                onChange={e => setNuevoProd(p => ({...p, precio_unitario: e.target.value}))}
-                placeholder="Ej. 10.00" />
-              <Input label="Precio de venta ($)" type="number" min="0" step="0.01" required
-                value={nuevoProd.precio_venta}
-                onChange={e => setNuevoProd(p => ({...p, precio_venta: e.target.value}))} />
-              <Input label="Stock mínimo" type="number" min="0"
-                value={nuevoProd.stock_minimo}
-                onChange={e => setNuevoProd(p => ({...p, stock_minimo: e.target.value}))} />
-              <div style={{ gridColumn:'1/-1' }}>
-                <Input label="URL de foto" value={nuevoProd.foto_url}
-                  onChange={e => setNuevoProd(p => ({...p, foto_url: e.target.value}))}
-                  placeholder="https://..." />
-              </div>
-              <div style={{ gridColumn:'1/-1' }}>
-                <Input label="Descripción" value={nuevoProd.descripcion}
-                  onChange={e => setNuevoProd(p => ({...p, descripcion: e.target.value}))}
-                  placeholder="Ej. Donut neck float M size" />
-              </div>
-            </div>
+            <CamposProducto data={nuevoProd} setData={setNuevoProd} />
             <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
               <Btn type="button" variant="ghost" onClick={() => setShowProd(false)}>Cancelar</Btn>
               <Btn type="submit" loading={saving}>Crear producto</Btn>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {/* Formulario editar producto */}
+      {editProd && (
+        <Card>
+          <div style={{ fontWeight:600, marginBottom:'1rem', fontSize:'14px', display:'flex', justifyContent:'space-between' }}>
+            <span>Editar producto</span>
+            <span style={{ fontSize:'12px', color:'var(--gray-400)', fontWeight:400 }}>ID #{editProd.id}</span>
+          </div>
+          <form onSubmit={handleEditarProducto} style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+            <CamposProducto data={editProd} setData={setEditProd} />
+            <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+              <Btn type="button" variant="ghost" onClick={() => setEditProd(null)}>Cancelar</Btn>
+              <Btn type="submit" loading={saving}>Guardar cambios</Btn>
             </div>
           </form>
         </Card>
@@ -289,7 +335,6 @@ export default function InventarioPage() {
                 </Select>
               )}
 
-              {/* Resumen precio */}
               {prodSel && (
                 <div style={{ gridColumn:'1/-1', background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0' }}>
@@ -317,7 +362,6 @@ export default function InventarioPage() {
                 </div>
               )}
 
-              {/* Tipo de cliente */}
               <div style={{ gridColumn:'1/-1' }}>
                 <div style={{ fontSize:'12px', color:'var(--gray-600)', fontWeight:500, marginBottom:'8px' }}>Cliente</div>
                 <div style={{ display:'flex', gap:'8px' }}>
@@ -369,7 +413,7 @@ export default function InventarioPage() {
         </Card>
       )}
 
-      {/* Tabs stock / ventas */}
+      {/* Tabs */}
       <div style={{ display:'flex', gap:'0', borderBottom:'2px solid var(--gray-100)' }}>
         {[['stock','Stock'], ['ventas','Historial de ventas']].map(([k, l]) => (
           <div key={k} onClick={() => setVista(k)}
@@ -401,11 +445,12 @@ export default function InventarioPage() {
                       {UBICACION_LABEL[u]}
                     </th>
                   ))}
+                  <th style={{ padding:'8px' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {stockPorProducto.length === 0
-                  ? <tr><td colSpan="8" style={{ textAlign:'center', padding:'2rem', color:'var(--gray-400)' }}>Sin productos</td></tr>
+                  ? <tr><td colSpan="9" style={{ textAlign:'center', padding:'2rem', color:'var(--gray-400)' }}>Sin productos</td></tr>
                   : stockPorProducto.map(p => (
                     <tr key={p.id} style={{ borderBottom:'1px solid var(--gray-100)' }}>
                       <td style={{ padding:'10px 0', fontWeight:500 }}>
@@ -428,6 +473,13 @@ export default function InventarioPage() {
                           </td>
                         )
                       })}
+                      <td style={{ textAlign:'center', padding:'8px' }}>
+                        <Btn variant="ghost" onClick={() => {
+                          setEditProd({ ...p })
+                          setShowProd(false); setShowMov(false); setShowVenta(false)
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}>✏️</Btn>
+                      </td>
                     </tr>
                   ))
                 }
