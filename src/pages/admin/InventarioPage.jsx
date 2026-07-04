@@ -162,16 +162,40 @@ export default function InventarioPage() {
           <form onSubmit={handleCrearProducto} style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
               <div style={{ gridColumn:'1/-1' }}>
-                <Input label="Nombre del producto" required value={nuevoProd.nombre}
-                  onChange={e => setNuevoProd(p => ({...p, nombre: e.target.value}))}
-                  placeholder="Ej. Flotador bebé" />
-              </div>
-              <Input label="Precio de venta ($)" type="number" min="0" step="0.01" required
-                value={nuevoProd.precio_venta}
-                onChange={e => setNuevoProd(p => ({...p, precio_venta: e.target.value}))} />
-              <Input label="Stock mínimo" type="number" min="0"
-                value={nuevoProd.stock_minimo}
-                onChange={e => setNuevoProd(p => ({...p, stock_minimo: e.target.value}))} />
+  <Input label="Nombre del producto" required value={nuevoProd.nombre}
+    onChange={e => setNuevoProd(p => ({...p, nombre: e.target.value}))}
+    placeholder="Ej. Air Free Neck Baby Float" />
+</div>
+<Input label="SKU / Item No." value={nuevoProd.sku}
+  onChange={e => setNuevoProd(p => ({...p, sku: e.target.value}))}
+  placeholder="Ej. B510" />
+<Input label="Color" value={nuevoProd.color}
+  onChange={e => setNuevoProd(p => ({...p, color: e.target.value}))}
+  placeholder="Ej. pink" />
+<Input label="Precio unitario USD (costo)" type="number" min="0" step="0.01"
+  value={nuevoProd.precio_unitario}
+  onChange={e => setNuevoProd(p => ({...p, precio_unitario: e.target.value}))}
+  placeholder="Ej. 10.00" />
+<Input label="Precio de venta ($)" type="number" min="0" step="0.01" required
+  value={nuevoProd.precio_venta}
+  onChange={e => setNuevoProd(p => ({...p, precio_venta: e.target.value}))} />
+<Input label="Descuento mayorista (%)" type="number" min="0" max="100" step="0.01"
+  value={nuevoProd.descuento}
+  onChange={e => setNuevoProd(p => ({...p, descuento: e.target.value}))}
+  placeholder="Ej. 10" />
+<Input label="Stock mínimo" type="number" min="0"
+  value={nuevoProd.stock_minimo}
+  onChange={e => setNuevoProd(p => ({...p, stock_minimo: e.target.value}))} />
+<div style={{ gridColumn:'1/-1' }}>
+  <Input label="URL de foto" value={nuevoProd.foto_url}
+    onChange={e => setNuevoProd(p => ({...p, foto_url: e.target.value}))}
+    placeholder="https://..." />
+</div>
+<div style={{ gridColumn:'1/-1' }}>
+  <Input label="Descripción" value={nuevoProd.descripcion}
+    onChange={e => setNuevoProd(p => ({...p, descripcion: e.target.value}))}
+    placeholder="Ej. Donut neck float M size" />
+</div>
             </div>
             <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
               <Btn type="button" variant="ghost" onClick={() => setShowProd(false)}>Cancelar</Btn>
