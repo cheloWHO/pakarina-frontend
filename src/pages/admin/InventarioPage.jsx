@@ -366,7 +366,11 @@ export default function InventarioPage() {
               <thead>
                 <tr style={{ borderBottom:'2px solid var(--gray-100)' }}>
                   <th style={{ textAlign:'left', padding:'8px 0', fontWeight:600, color:'var(--gray-600)' }}>Producto</th>
-                  <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Precio</th>
+                  <th style={{ textAlign:'left', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>SKU</th>
+                  <th style={{ textAlign:'left', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Color</th>
+                  <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Precio venta</th>
+                  <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Costo USD</th>
+                  <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Desc. mayorista</th>
                   {UBICACIONES.map(u => (
                     <th key={u} style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>
                       {UBICACION_LABEL[u]}
