@@ -265,9 +265,13 @@ export default function InventarioPage() {
                 onChange={e => setVenta(v => ({...v, producto_id: e.target.value}))}>
                 <option value="">Seleccionar…</option>
                 {productos.map(p => <option key={p.id} value={p.id}>{p.nombre} — {fmtMoney(p.precio_venta)}</option>)}
-              </Select>
-              <Input label="Cantidad" type="number" min="1" required
-                value={venta.cantidad}
+             <Input label="Cantidad" type="number" min="1" required
+              value={venta.cantidad}
+              onChange={e => setVenta(v => ({...v, cantidad: e.target.value}))} />
+            <Input label="Descuento (%)" type="number" min="0" max="100" step="0.01"
+              value={venta.descuento}
+              onChange={e => setVenta(v => ({...v, descuento: e.target.value}))}
+              placeholder="0" />
                 onChange={e => setVenta(v => ({...v, cantidad: e.target.value}))} />
               <Select label="Método de pago" value={venta.metodo_pago}
                 onChange={e => setVenta(v => ({...v, metodo_pago: e.target.value}))}>
