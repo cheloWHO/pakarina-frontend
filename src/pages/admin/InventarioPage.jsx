@@ -173,6 +173,7 @@ export default function InventarioPage() {
 
   if (loading) return <Spinner />
 
+  function CamposProducto({ data, setData }) {
     return (
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
         <div style={{ gridColumn:'1/-1' }}>
