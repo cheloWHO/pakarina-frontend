@@ -15,7 +15,11 @@ const VENTA_INICIAL = {
   cliente_nombre:'', cliente_telefono:'', cliente_email:'', cliente_cedula:'',
   descuento:'0',
 }
-const PRODUCTO_INICIAL = { nombre:'', precio_venta:'', stock_minimo:'2', sku:'', descripcion:'', color:'', foto_url:'', precio_unitario:'', descuento:'0' }
+
+const PRODUCTO_INICIAL = {
+  nombre:'', precio_venta:'', stock_minimo:'2',
+  sku:'', descripcion:'', color:'', foto_url:'', precio_unitario:'',
+}
 
 export default function InventarioPage() {
   const { user }     = useAuth()
@@ -30,7 +34,7 @@ export default function InventarioPage() {
   const [msg,        setMsg]        = useState(null)
   const [saving,     setSaving]     = useState(false)
 
-  const [vista,      setVista]      = useState('stock') // 'stock' | 'ventas'
+  const [vista,      setVista]      = useState('stock')
   const [showMov,    setShowMov]    = useState(false)
   const [showVenta,  setShowVenta]  = useState(false)
   const [showProd,   setShowProd]   = useState(false)
@@ -39,7 +43,7 @@ export default function InventarioPage() {
     producto_id:'', tipo:'entrada_proveedor',
     cantidad:'', local_destino_id:'', nota:'',
   })
-  const [venta,   setVenta]   = useState(VENTA_INICIAL)
+  const [venta,     setVenta]     = useState(VENTA_INICIAL)
   const [nuevoProd, setNuevoProd] = useState(PRODUCTO_INICIAL)
 
   async function load() {
@@ -85,15 +89,16 @@ export default function InventarioPage() {
     try {
       const local_id_final = esGlobal ? parseInt(venta.local_id) : localId
       await api.post('/api/inventario/ventas', {
-        local_id:        local_id_final,
-        producto_id:     parseInt(venta.producto_id),
-        cantidad:        parseInt(venta.cantidad),
-        metodo_pago:     venta.metodo_pago,
-        bebe_id:         venta.tipo_cliente === 'bebe' && venta.bebe_id ? parseInt(venta.bebe_id) : null,
-        cliente_nombre:  venta.tipo_cliente === 'externo' ? venta.cliente_nombre  : null,
-        cliente_telefono:venta.tipo_cliente === 'externo' ? venta.cliente_telefono: null,
-        cliente_email:   venta.tipo_cliente === 'externo' ? venta.cliente_email   : null,
-        cliente_cedula:  venta.tipo_cliente === 'externo' ? venta.cliente_cedula  : null,
+        local_id:         local_id_final,
+        producto_id:      parseInt(venta.producto_id),
+        cantidad:         parseInt(venta.cantidad),
+        metodo_pago:      venta.metodo_pago,
+        descuento:        parseFloat(venta.descuento || 0),
+        bebe_id:          venta.tipo_cliente === 'bebe' && venta.bebe_id ? parseInt(venta.bebe_id) : null,
+        cliente_nombre:   venta.tipo_cliente === 'externo' ? venta.cliente_nombre   : null,
+        cliente_telefono: venta.tipo_cliente === 'externo' ? venta.cliente_telefono : null,
+        cliente_email:    venta.tipo_cliente === 'externo' ? venta.cliente_email    : null,
+        cliente_cedula:   venta.tipo_cliente === 'externo' ? venta.cliente_cedula   : null,
       })
       setMsg({ type:'ok', text:'Venta registrada correctamente' })
       setShowVenta(false)
@@ -117,7 +122,6 @@ export default function InventarioPage() {
         color:           nuevoProd.color || null,
         foto_url:        nuevoProd.foto_url || null,
         precio_unitario: nuevoProd.precio_unitario ? parseFloat(nuevoProd.precio_unitario) : null,
-        descuento:       nuevoProd.descuento ? parseFloat(nuevoProd.descuento) : 0,
       })
       setMsg({ type:'ok', text:'Producto creado correctamente' })
       setShowProd(false)
@@ -136,13 +140,14 @@ export default function InventarioPage() {
     }),
   }))
 
-  const prodSel = productos.find(p => p.id === parseInt(venta.producto_id))
-  const descuentoPct = parseFloat(venta.descuento || 0)
-  const precioConDescuento = prodSel ? parseFloat((prodSel.precio_venta * (1 - descuentoPct / 100)).toFixed(2)) : 0
-  const ventaTotal = prodSel ? parseFloat((precioConDescuento * parseInt(venta.cantidad || 1)).toFixed(2)) : 0
-  const ventaComision = venta.metodo_pago === 'tarjeta' ? parseFloat((ventaTotal * 0.06).toFixed(2)) : 0
-  const ventaNeto = parseFloat((ventaTotal - ventaComision).toFixed(2))
-    if (loading) return <Spinner />
+  const prodSel           = productos.find(p => p.id === parseInt(venta.producto_id))
+  const descuentoPct      = parseFloat(venta.descuento || 0)
+  const precioConDesc     = prodSel ? parseFloat((prodSel.precio_venta * (1 - descuentoPct / 100)).toFixed(2)) : 0
+  const ventaTotal        = prodSel ? parseFloat((precioConDesc * parseInt(venta.cantidad || 1)).toFixed(2)) : 0
+  const ventaComision     = venta.metodo_pago === 'tarjeta' ? parseFloat((ventaTotal * 0.06).toFixed(2)) : 0
+  const ventaNeto         = parseFloat((ventaTotal - ventaComision).toFixed(2))
+
+  if (loading) return <Spinner />
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
@@ -169,40 +174,36 @@ export default function InventarioPage() {
           <form onSubmit={handleCrearProducto} style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
               <div style={{ gridColumn:'1/-1' }}>
-  <Input label="Nombre del producto" required value={nuevoProd.nombre}
-    onChange={e => setNuevoProd(p => ({...p, nombre: e.target.value}))}
-    placeholder="Ej. Air Free Neck Baby Float" />
-</div>
-<Input label="SKU / Item No." value={nuevoProd.sku}
-  onChange={e => setNuevoProd(p => ({...p, sku: e.target.value}))}
-  placeholder="Ej. B510" />
-<Input label="Color" value={nuevoProd.color}
-  onChange={e => setNuevoProd(p => ({...p, color: e.target.value}))}
-  placeholder="Ej. pink" />
-<Input label="Precio unitario USD (costo)" type="number" min="0" step="0.01"
-  value={nuevoProd.precio_unitario}
-  onChange={e => setNuevoProd(p => ({...p, precio_unitario: e.target.value}))}
-  placeholder="Ej. 10.00" />
-<Input label="Precio de venta ($)" type="number" min="0" step="0.01" required
-  value={nuevoProd.precio_venta}
-  onChange={e => setNuevoProd(p => ({...p, precio_venta: e.target.value}))} />
-<Input label="Descuento mayorista (%)" type="number" min="0" max="100" step="0.01"
-  value={nuevoProd.descuento}
-  onChange={e => setNuevoProd(p => ({...p, descuento: e.target.value}))}
-  placeholder="Ej. 10" />
-<Input label="Stock mínimo" type="number" min="0"
-  value={nuevoProd.stock_minimo}
-  onChange={e => setNuevoProd(p => ({...p, stock_minimo: e.target.value}))} />
-<div style={{ gridColumn:'1/-1' }}>
-  <Input label="URL de foto" value={nuevoProd.foto_url}
-    onChange={e => setNuevoProd(p => ({...p, foto_url: e.target.value}))}
-    placeholder="https://..." />
-</div>
-<div style={{ gridColumn:'1/-1' }}>
-  <Input label="Descripción" value={nuevoProd.descripcion}
-    onChange={e => setNuevoProd(p => ({...p, descripcion: e.target.value}))}
-    placeholder="Ej. Donut neck float M size" />
-</div>
+                <Input label="Nombre del producto" required value={nuevoProd.nombre}
+                  onChange={e => setNuevoProd(p => ({...p, nombre: e.target.value}))}
+                  placeholder="Ej. Air Free Neck Baby Float" />
+              </div>
+              <Input label="SKU / Item No." value={nuevoProd.sku}
+                onChange={e => setNuevoProd(p => ({...p, sku: e.target.value}))}
+                placeholder="Ej. B510" />
+              <Input label="Color" value={nuevoProd.color}
+                onChange={e => setNuevoProd(p => ({...p, color: e.target.value}))}
+                placeholder="Ej. pink" />
+              <Input label="Precio unitario USD (costo)" type="number" min="0" step="0.01"
+                value={nuevoProd.precio_unitario}
+                onChange={e => setNuevoProd(p => ({...p, precio_unitario: e.target.value}))}
+                placeholder="Ej. 10.00" />
+              <Input label="Precio de venta ($)" type="number" min="0" step="0.01" required
+                value={nuevoProd.precio_venta}
+                onChange={e => setNuevoProd(p => ({...p, precio_venta: e.target.value}))} />
+              <Input label="Stock mínimo" type="number" min="0"
+                value={nuevoProd.stock_minimo}
+                onChange={e => setNuevoProd(p => ({...p, stock_minimo: e.target.value}))} />
+              <div style={{ gridColumn:'1/-1' }}>
+                <Input label="URL de foto" value={nuevoProd.foto_url}
+                  onChange={e => setNuevoProd(p => ({...p, foto_url: e.target.value}))}
+                  placeholder="https://..." />
+              </div>
+              <div style={{ gridColumn:'1/-1' }}>
+                <Input label="Descripción" value={nuevoProd.descripcion}
+                  onChange={e => setNuevoProd(p => ({...p, descripcion: e.target.value}))}
+                  placeholder="Ej. Donut neck float M size" />
+              </div>
             </div>
             <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
               <Btn type="button" variant="ghost" onClick={() => setShowProd(false)}>Cancelar</Btn>
@@ -265,31 +266,44 @@ export default function InventarioPage() {
                 onChange={e => setVenta(v => ({...v, producto_id: e.target.value}))}>
                 <option value="">Seleccionar…</option>
                 {productos.map(p => <option key={p.id} value={p.id}>{p.nombre} — {fmtMoney(p.precio_venta)}</option>)}
-             <Input label="Cantidad" type="number" min="1" required
-              value={venta.cantidad}
-              onChange={e => setVenta(v => ({...v, cantidad: e.target.value}))} />
-            <Input label="Descuento (%)" type="number" min="0" max="100" step="0.01"
-              value={venta.descuento}
-              onChange={e => setVenta(v => ({...v, descuento: e.target.value}))}
-              placeholder="0" />
+              </Select>
+              <Input label="Cantidad" type="number" min="1" required
+                value={venta.cantidad}
                 onChange={e => setVenta(v => ({...v, cantidad: e.target.value}))} />
+              <Input label="Descuento (%)" type="number" min="0" max="100" step="0.01"
+                value={venta.descuento}
+                onChange={e => setVenta(v => ({...v, descuento: e.target.value}))}
+                placeholder="0" />
               <Select label="Método de pago" value={venta.metodo_pago}
                 onChange={e => setVenta(v => ({...v, metodo_pago: e.target.value}))}>
                 {Object.entries(METODO_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </Select>
-              <Select label="Vender desde" required value={venta.local_id}
-                 onChange={e => setVenta(v => ({...v, local_id: e.target.value}))}>
-                <option value="">Seleccionar…</option>
-                <option value="1">Villaflora</option>
-                <option value="2">Florida</option>
-                <option value="0">Bodega</option>
-              </Select>
+              {esGlobal && (
+                <Select label="Vender desde" required value={venta.local_id}
+                  onChange={e => setVenta(v => ({...v, local_id: e.target.value}))}>
+                  <option value="">Seleccionar…</option>
+                  <option value="1">Villaflora</option>
+                  <option value="2">Florida</option>
+                  <option value="0">Bodega</option>
+                </Select>
+              )}
 
               {/* Resumen precio */}
               {prodSel && (
                 <div style={{ gridColumn:'1/-1', background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0' }}>
-                    <span style={{ color:'var(--gray-600)' }}>Total</span><span>${ventaTotal.toFixed(2)}</span>
+                    <span style={{ color:'var(--gray-600)' }}>Precio unitario</span>
+                    <span>{fmtMoney(prodSel.precio_venta)}</span>
+                  </div>
+                  {descuentoPct > 0 && (
+                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', padding:'4px 8px', marginTop:'4px', background:'var(--brand-light)', borderRadius:'var(--radius-sm)', color:'var(--brand-dark)' }}>
+                      <span>Descuento {descuentoPct}%</span>
+                      <span>-{fmtMoney(prodSel.precio_venta - precioConDesc)}</span>
+                    </div>
+                  )}
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0', fontWeight:600 }}>
+                    <span style={{ color:'var(--gray-600)' }}>Total</span>
+                    <span>${ventaTotal.toFixed(2)}</span>
                   </div>
                   {venta.metodo_pago === 'tarjeta' && <>
                     <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', padding:'4px 8px', marginTop:'4px', background:'var(--warn-light)', borderRadius:'var(--radius-sm)', color:'var(--warn)' }}>
@@ -381,7 +395,6 @@ export default function InventarioPage() {
                   <th style={{ textAlign:'left', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Color</th>
                   <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Precio venta</th>
                   <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Costo USD</th>
-                  <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Desc. mayorista</th>
                   {UBICACIONES.map(u => (
                     <th key={u} style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>
                       {UBICACION_LABEL[u]}
@@ -391,7 +404,7 @@ export default function InventarioPage() {
               </thead>
               <tbody>
                 {stockPorProducto.length === 0
-                  ? <tr><td colSpan="6" style={{ textAlign:'center', padding:'2rem', color:'var(--gray-400)' }}>Sin productos</td></tr>
+                  ? <tr><td colSpan="8" style={{ textAlign:'center', padding:'2rem', color:'var(--gray-400)' }}>Sin productos</td></tr>
                   : stockPorProducto.map(p => (
                     <tr key={p.id} style={{ borderBottom:'1px solid var(--gray-100)' }}>
                       <td style={{ padding:'10px 0', fontWeight:500 }}>
@@ -403,7 +416,6 @@ export default function InventarioPage() {
                       <td style={{ padding:'8px', color:'var(--gray-500)', fontSize:'12px' }}>{p.color || '—'}</td>
                       <td style={{ textAlign:'center', color:'var(--gray-400)' }}>{fmtMoney(p.precio_venta)}</td>
                       <td style={{ textAlign:'center', color:'var(--gray-400)', fontSize:'12px' }}>{p.precio_unitario ? `$${parseFloat(p.precio_unitario).toFixed(2)}` : '—'}</td>
-                      <td style={{ textAlign:'center', fontSize:'12px' }}>{p.descuento > 0 ? <Badge color="blue">{p.descuento}%</Badge> : '—'}</td>
                       {p.ubicaciones.map(u => {
                         const bajo = u.cantidad <= p.stock_minimo
                         return (
@@ -437,6 +449,7 @@ export default function InventarioPage() {
                     <th style={{ textAlign:'center', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Cant.</th>
                     <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Cliente</th>
                     <th style={{ textAlign:'left', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Método</th>
+                    <th style={{ textAlign:'center', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Desc.</th>
                     <th style={{ textAlign:'right', padding:'6px 8px', fontSize:'11px', color:'var(--gray-400)', fontWeight:600 }}>Total</th>
                   </tr>
                 </thead>
@@ -451,6 +464,9 @@ export default function InventarioPage() {
                       </td>
                       <td style={{ padding:'8px' }}>
                         <Badge color="gray">{METODO_LABEL[v.metodo_pago] || v.metodo_pago}</Badge>
+                      </td>
+                      <td style={{ padding:'8px', textAlign:'center', fontSize:'12px', color:'var(--brand-dark)' }}>
+                        {v.descuento > 0 ? `${v.descuento}%` : '—'}
                       </td>
                       <td style={{ padding:'8px', textAlign:'right', fontWeight:600 }}>{fmtMoney(v.total)}</td>
                     </tr>
