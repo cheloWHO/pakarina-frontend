@@ -137,11 +137,12 @@ export default function InventarioPage() {
   }))
 
   const prodSel = productos.find(p => p.id === parseInt(venta.producto_id))
-  const ventaTotal = prodSel ? parseFloat((prodSel.precio_venta * parseInt(venta.cantidad || 1)).toFixed(2)) : 0
+  const descuentoPct = parseFloat(venta.descuento || 0)
+  const precioConDescuento = prodSel ? parseFloat((prodSel.precio_venta * (1 - descuentoPct / 100)).toFixed(2)) : 0
+  const ventaTotal = prodSel ? parseFloat((precioConDescuento * parseInt(venta.cantidad || 1)).toFixed(2)) : 0
   const ventaComision = venta.metodo_pago === 'tarjeta' ? parseFloat((ventaTotal * 0.06).toFixed(2)) : 0
   const ventaNeto = parseFloat((ventaTotal - ventaComision).toFixed(2))
-
-  if (loading) return <Spinner />
+    if (loading) return <Spinner />
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem', maxWidth:'900px' }}>
