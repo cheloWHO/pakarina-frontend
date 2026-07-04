@@ -59,7 +59,6 @@ function CamposProducto({ data, setData }) {
 }
 
 export default function InventarioPage() {
-export default function InventarioPage() {
   const { user }     = useAuth()
   const esGlobal     = !user?.local_id
   const localId      = user?.local_id
