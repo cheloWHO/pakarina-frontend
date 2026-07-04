@@ -15,7 +15,7 @@ const VENTA_INICIAL = {
   cliente_nombre:'', cliente_telefono:'', cliente_email:'', cliente_cedula:'',
 }
 
-const PRODUCTO_INICIAL = { nombre:'', precio_venta:'', stock_minimo:'2' }
+const PRODUCTO_INICIAL = { nombre:'', precio_venta:'', stock_minimo:'2', sku:'', descripcion:'', color:'', foto_url:'', precio_unitario:'', descuento:'0' }
 
 export default function InventarioPage() {
   const { user }     = useAuth()
