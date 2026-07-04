@@ -20,7 +20,45 @@ const PRODUCTO_INICIAL = {
   nombre:'', precio_venta:'', stock_minimo:'2',
   sku:'', descripcion:'', color:'', foto_url:'', precio_unitario:'',
 }
+function CamposProducto({ data, setData }) {
+  return (
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+      <div style={{ gridColumn:'1/-1' }}>
+        <Input label="Nombre del producto" required value={data.nombre}
+          onChange={e => setData(p => ({...p, nombre: e.target.value}))}
+          placeholder="Ej. Air Free Neck Baby Float" />
+      </div>
+      <Input label="SKU / Item No." value={data.sku || ''}
+        onChange={e => setData(p => ({...p, sku: e.target.value}))}
+        placeholder="Ej. B510" />
+      <Input label="Color" value={data.color || ''}
+        onChange={e => setData(p => ({...p, color: e.target.value}))}
+        placeholder="Ej. pink" />
+      <Input label="Precio unitario USD (costo)" type="number" min="0" step="0.01"
+        value={data.precio_unitario || ''}
+        onChange={e => setData(p => ({...p, precio_unitario: e.target.value}))}
+        placeholder="Ej. 10.00" />
+      <Input label="Precio de venta ($)" type="number" min="0" step="0.01" required
+        value={data.precio_venta}
+        onChange={e => setData(p => ({...p, precio_venta: e.target.value}))} />
+      <Input label="Stock mínimo" type="number" min="0"
+        value={data.stock_minimo}
+        onChange={e => setData(p => ({...p, stock_minimo: e.target.value}))} />
+      <div style={{ gridColumn:'1/-1' }}>
+        <Input label="URL de foto" value={data.foto_url || ''}
+          onChange={e => setData(p => ({...p, foto_url: e.target.value}))}
+          placeholder="https://..." />
+      </div>
+      <div style={{ gridColumn:'1/-1' }}>
+        <Input label="Descripción" value={data.descripcion || ''}
+          onChange={e => setData(p => ({...p, descripcion: e.target.value}))}
+          placeholder="Ej. Donut neck float M size" />
+      </div>
+    </div>
+  )
+}
 
+export default function InventarioPage() {
 export default function InventarioPage() {
   const { user }     = useAuth()
   const esGlobal     = !user?.local_id
