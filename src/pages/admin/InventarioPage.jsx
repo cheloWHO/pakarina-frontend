@@ -271,10 +271,10 @@ export default function InventarioPage() {
               <Input label="Cantidad" type="number" min="1" required
                 value={venta.cantidad}
                 onChange={e => setVenta(v => ({...v, cantidad: e.target.value}))} />
-              <Input label="Descuento (%)" type="number" min="0" max="100" step="0.01"
+              <Input label="Descuento ($)" type="number" min="0" step="0.01"
                 value={venta.descuento}
                 onChange={e => setVenta(v => ({...v, descuento: e.target.value}))}
-                placeholder="0" />
+                placeholder="0.00" />
               <Select label="Método de pago" value={venta.metodo_pago}
                 onChange={e => setVenta(v => ({...v, metodo_pago: e.target.value}))}>
                 {Object.entries(METODO_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
