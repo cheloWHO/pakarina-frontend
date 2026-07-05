@@ -17,7 +17,7 @@ const VENTA_INICIAL = {
 }
 
 const PRODUCTO_INICIAL = {
-  nombre:'', precio_venta:'', stock_minimo:'2',
+  nombre:'', precio_venta:'', stock_minimo:'0',
   sku:'', descripcion:'', color:'', foto_url:'', precio_unitario:'',
 }
 function CamposProducto({ data, setData }) {
