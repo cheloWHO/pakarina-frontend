@@ -169,7 +169,28 @@ export default function InventarioPage() {
       setMsg({ type:'error', text: e.response?.data?.error || 'Error al crear producto' })
     } finally { setSaving(false) }
   }
+    async function handleOcultarProducto(id, nombre) {
+    if (!confirm(`¿Ocultar "${nombre}"? No aparecerá en el inventario pero se puede reactivar.`)) return
+    try {
+      await api.patch(`/api/inventario/productos/${id}/ocultar`)
+      setMsg({ type:'ok', text:'Producto ocultado correctamente' })
+      load()
+    } catch(e) {
+      setMsg({ type:'error', text: e.response?.data?.error || 'Error al ocultar producto' })
+    }
+  }
 
+  async function handleEliminarProducto(id, nombre) {
+    if (!confirm(`¿ELIMINAR "${nombre}" definitivamente? Esta acción no se puede deshacer.`)) return
+    try {
+      await api.delete(`/api/inventario/productos/${id}`)
+      setMsg({ type:'ok', text:'Producto eliminado correctamente' })
+      load()
+    } catch(e) {
+      setMsg({ type:'error', text: e.response?.data?.error || 'Error al eliminar producto' })
+    }
+  }
+  
   async function handleEditarProducto(e) {
     e.preventDefault()
     setSaving(true); setMsg(null)
