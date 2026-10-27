@@ -493,12 +493,16 @@ export default function InventarioPage() {
                           </td>
                         )
                       })}
-                      <td style={{ textAlign:'center', padding:'8px' }}>
-                        <Btn variant="ghost" onClick={() => {
-                          setEditProd({ ...p })
-                          setShowProd(false); setShowMov(false); setShowVenta(false)
-                          window.scrollTo({ top: 0, behavior: 'smooth' })
-                        }}>✏️</Btn>
+                       <td style={{ textAlign:'center', padding:'8px' }}>
+                        <div style={{ display:'flex', gap:'4px', justifyContent:'center' }}>
+                          <Btn variant="ghost" onClick={() => {
+                            setEditProd({ ...p })
+                            setShowProd(false); setShowMov(false); setShowVenta(false)
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                          }}>✏️</Btn>
+                          <Btn variant="ghost" onClick={() => handleOcultarProducto(p.id, p.nombre)}>🙈</Btn>
+                          <Btn variant="ghost" onClick={() => handleEliminarProducto(p.id, p.nombre)}>🗑️</Btn>
+                        </div>
                       </td>
                     </tr>
                   ))
