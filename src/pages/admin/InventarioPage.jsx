@@ -113,6 +113,102 @@ export default function InventarioPage() {
 
   useEffect(() => { load() }, [])
 
+    async function handleImportarExcel(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImportando(true); setImportMsg(null)
+    try {
+      const data = await file.arrayBuffer()
+      const workbook = XLSX.read(data)
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      const filas = XLSX.utils.sheet_to_json(sheet)
+
+      let creados = 0, actualizados = 0, errores = 0
+
+      for (const fila of filas) {
+        const sku          = fila['SKU'] ? String(fila['SKU']).trim() : null
+        const nombre       = fila['Producto'] ? String(fila['Producto']).trim() : null
+        const descripcion  = fila['Descripción'] ? String(fila['Descripción']).trim() : null
+        const diseno       = fila['Diseño'] ? String(fila['Diseño']).trim() : null
+        const color        = fila['Color'] ? String(fila['Color']).trim() : null
+        const cantidad     = parseInt(fila['Cantidad'] || 0)
+        const costo        = parseFloat(fila['Costo (USD)'] || 0)
+        const precio_venta = parseFloat(fila['Precio PVP'] || 0)
+
+        if (!nombre) continue
+
+        try {
+          // Buscar si el SKU ya existe
+          const prodExistente = sku
+            ? todosProductos.find(p => p.sku && p.sku.trim() === sku)
+            : null
+
+          if (prodExistente) {
+            // Actualizar producto existente
+            await api.patch(`/api/inventario/productos/${prodExistente.id}`, {
+              nombre,
+              precio_venta,
+              stock_minimo: prodExistente.stock_minimo || 0,
+              sku,
+              descripcion,
+              color,
+              diseno,
+              foto_url: prodExistente.foto_url || null,
+              precio_unitario: costo || null,
+            })
+            actualizados++
+          } else {
+            // Crear producto nuevo
+            await api.post('/api/inventario/productos', {
+              nombre,
+              precio_venta,
+              stock_minimo: 0,
+              sku,
+              descripcion,
+              color,
+              diseno,
+              foto_url: null,
+              precio_unitario: costo || null,
+            })
+            actualizados++ // lo contamos igual para buscar el id luego
+          }
+
+          // Registrar entrada a bodega si hay cantidad
+          if (cantidad > 0) {
+            // Recargar productos para obtener el id del nuevo
+            const pRes = await api.get('/api/inventario/productos/todos')
+            const prodActualizado = pRes.data.find(p =>
+              sku ? (p.sku && p.sku.trim() === sku) : p.nombre === nombre
+            )
+            if (prodActualizado) {
+              await api.post('/api/inventario/movimientos', {
+                producto_id: prodActualizado.id,
+                tipo: 'entrada_proveedor',
+                cantidad,
+                nota: `Importación Excel`,
+              })
+            }
+          }
+
+          if (prodExistente) actualizados
+          else creados++
+        } catch(err) {
+          console.error('Error en fila:', nombre, err)
+          errores++
+        }
+      }
+
+      setImportMsg({ type:'ok', text:`Importación completada: ${creados} creados, ${actualizados} actualizados${errores > 0 ? `, ${errores} errores` : ''}` })
+      load()
+    } catch(err) {
+      setImportMsg({ type:'error', text:'Error al leer el archivo Excel' })
+      console.error(err)
+    } finally {
+      setImportando(false)
+      e.target.value = ''
+    }
+  }
+  
   async function handleMov(e) {
     e.preventDefault()
     setSaving(true); setMsg(null)
