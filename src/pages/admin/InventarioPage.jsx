@@ -35,6 +35,9 @@ function CamposProducto({ data, setData }) {
       <Input label="Color" value={data.color || ''}
         onChange={e => setData(p => ({...p, color: e.target.value}))}
         placeholder="Ej. pink" />
+      <Input label="Diseño" value={data.diseno || ''}
+        onChange={e => setData(p => ({...p, diseno: e.target.value}))}
+        placeholder="Ej. Dona, Sirena, Tiburón" />
       <Input label="Precio unitario USD (costo)" type="number" min="0" step="0.01"
         value={data.precio_unitario || ''}
         onChange={e => setData(p => ({...p, precio_unitario: e.target.value}))}
