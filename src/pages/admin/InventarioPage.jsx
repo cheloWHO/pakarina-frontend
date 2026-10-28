@@ -208,6 +208,25 @@ export default function InventarioPage() {
       e.target.value = ''
     }
   }
+
+    function handleExportarExcel() {
+    const datos = stockPorProducto.map(p => ({
+      SKU: p.sku || '',
+      Producto: p.nombre,
+      Descripción: p.descripcion || '',
+      Diseño: p.diseno || '',
+      Color: p.color || '',
+      'Precio venta': p.precio_venta,
+      'Costo USD': p.precio_unitario || '',
+      Bodega: p.ubicaciones.find(u => u.ubicacion === 'bodega')?.cantidad ?? 0,
+      Villaflora: p.ubicaciones.find(u => u.ubicacion === 'villaflora')?.cantidad ?? 0,
+      Florida: p.ubicaciones.find(u => u.ubicacion === 'florida')?.cantidad ?? 0,
+    }))
+    const ws = XLSX.utils.json_to_sheet(datos)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario')
+    XLSX.writeFile(wb, `inventario_pakarina_${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
   
   async function handleMov(e) {
     e.preventDefault()
