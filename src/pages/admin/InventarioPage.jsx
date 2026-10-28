@@ -362,17 +362,26 @@ export default function InventarioPage() {
           <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>Flujo: Proveedor → Bodega → Villaflora / Florida</p>
         </div>
         <div style={{ display:'flex', gap:'8px' }}>
-          <label style={{ cursor:'pointer' }}>
+          <label title="Importar Excel" style={{ cursor:'pointer' }}>
             <input type="file" accept=".xlsx,.xls" style={{ display:'none' }}
               onChange={handleImportarExcel} disabled={importando} />
             <span style={{
-              padding:'6px 14px', borderRadius:'var(--radius-sm)', fontSize:'13px',
-              border:'1px solid var(--gray-200)', background:'#fff', color:'var(--gray-600)',
+              padding:'6px 10px', borderRadius:'var(--radius-sm)', fontSize:'16px',
+              border:'1px solid var(--gray-200)', background:'#fff',
               cursor: importando ? 'not-allowed' : 'pointer', opacity: importando ? 0.6 : 1,
             }}>
-              {importando ? 'Importando…' : '📥 Importar Excel'}
+              {importando ? '⏳' : '📥'}
             </span>
           </label>
+          <span title="Exportar Excel"
+            onClick={handleExportarExcel}
+            style={{
+              padding:'6px 10px', borderRadius:'var(--radius-sm)', fontSize:'16px',
+              border:'1px solid var(--gray-200)', background:'#fff', color:'var(--gray-600)',
+              cursor:'pointer',
+            }}>
+            📤
+          </span>
           <Btn variant="ghost" onClick={() => { setShowProd(s => !s); setShowMov(false); setShowVenta(false); setEditProd(null) }}>+ Producto</Btn>
           <Btn variant="secondary" onClick={() => { setShowMov(s => !s); setShowProd(false); setShowVenta(false); setEditProd(null) }}>+ Movimiento</Btn>
           <Btn onClick={() => { setShowVenta(s => !s); setShowProd(false); setShowMov(false); setEditProd(null) }}>+ Venta</Btn>
