@@ -86,16 +86,18 @@ export default function InventarioPage() {
 
   async function load() {
     try {
-      const [sRes, pRes, bRes, vRes] = await Promise.all([
+      const [sRes, pRes, bRes, vRes, tRes] = await Promise.all([
         api.get('/api/inventario/stock'),
         api.get('/api/inventario/productos'),
         bebesAPI.listar(localId),
         api.get('/api/inventario/ventas', { params: { local_id: localId } }),
+        api.get('/api/inventario/productos/todos'),
       ])
       setStock(sRes.data)
       setProductos(pRes.data)
       setBebes(bRes.data)
       setVentas(vRes.data)
+      setTodosProductos(tRes.data)
     } catch(e) { console.error(e) }
     finally { setLoading(false) }
   }
