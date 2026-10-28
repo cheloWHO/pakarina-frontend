@@ -83,6 +83,9 @@ export default function InventarioPage() {
   const [showProd,   setShowProd]   = useState(false)
   const [editProd,   setEditProd]   = useState(null)
 
+  const [importando, setImportando] = useState(false)
+  const [importMsg,  setImportMsg]  = useState(null)
+  
   const [mov, setMov] = useState({
     producto_id:'', tipo:'entrada_proveedor',
     cantidad:'', local_destino_id:'', nota:'',
