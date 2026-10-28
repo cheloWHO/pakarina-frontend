@@ -165,6 +165,7 @@ export default function InventarioPage() {
         sku:             nuevoProd.sku || null,
         descripcion:     nuevoProd.descripcion || null,
         color:           nuevoProd.color || null,
+        diseno:          nuevoProd.diseno || null,
         foto_url:        nuevoProd.foto_url || null,
         precio_unitario: nuevoProd.precio_unitario ? parseFloat(nuevoProd.precio_unitario) : null,
       })
@@ -188,6 +189,7 @@ export default function InventarioPage() {
         sku:             editProd.sku || null,
         descripcion:     editProd.descripcion || null,
         color:           editProd.color || null,
+        diseno:          editProd.diseno || null,
         foto_url:        editProd.foto_url || null,
         precio_unitario: editProd.precio_unitario ? parseFloat(editProd.precio_unitario) : null,
       })
