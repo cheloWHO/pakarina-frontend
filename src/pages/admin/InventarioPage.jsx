@@ -381,13 +381,14 @@ export default function InventarioPage() {
           <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>Flujo: Proveedor → Bodega → Villaflora / Florida</p>
         </div>
         <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
-          <label title="Importar Excel" style={{ cursor:'pointer' }}>
+          <label title="Importar Excel" style={{ cursor:'pointer', display:'flex', alignItems:'center' }}>
             <input type="file" accept=".xlsx,.xls" style={{ display:'none' }}
               onChange={handleImportarExcel} disabled={importando} />
             <span style={{
               padding:'6px 10px', borderRadius:'var(--radius-sm)', fontSize:'16px',
               border:'1px solid var(--gray-200)', background:'#fff',
               cursor: importando ? 'not-allowed' : 'pointer', opacity: importando ? 0.6 : 1,
+              display:'flex', alignItems:'center',
             }}>
               {importando ? '⏳' : '📥'}
             </span>
