@@ -4,6 +4,7 @@ import { bebesAPI } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import { Card, Btn, Input, Select, Badge, Spinner, Alert, Empty } from '../../components/ui'
 import { fmtMoney, fmtFecha, METODO_LABEL } from '../../utils'
+import * as XLSX from 'xlsx'
 
 const UBICACIONES = ['bodega', 'villaflora', 'florida']
 const UBICACION_LABEL = { bodega:'Bodega central', villaflora:'Villaflora', florida:'Florida' }
