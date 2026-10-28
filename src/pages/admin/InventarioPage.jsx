@@ -172,6 +172,16 @@ export default function InventarioPage() {
     } finally { setSaving(false) }
   }
     const [todosProductos, setTodosProductos] = useState([])
+      async function handleReactivarProducto(id, nombre) {
+    if (!confirm(`¿Reactivar "${nombre}"?`)) return
+    try {
+      await api.patch(`/api/inventario/productos/${id}/reactivar`)
+      setMsg({ type:'ok', text:'Producto reactivado correctamente' })
+      load()
+    } catch(e) {
+      setMsg({ type:'error', text: e.response?.data?.error || 'Error al reactivar producto' })
+    }
+  }
     async function handleOcultarProducto(id, nombre) {
     if (!confirm(`¿Ocultar "${nombre}"? No aparecerá en el inventario pero se puede reactivar.`)) return
     try {
