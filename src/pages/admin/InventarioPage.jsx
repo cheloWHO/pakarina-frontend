@@ -613,6 +613,7 @@ export default function InventarioPage() {
                       </td>
                       <td style={{ padding:'8px', color:'var(--gray-500)', fontSize:'12px' }}>{p.sku || '—'}</td>
                       <td style={{ padding:'8px', color:'var(--gray-500)', fontSize:'12px' }}>{p.color || '—'}</td>
+                      <td style={{ padding:'8px', color:'var(--gray-500)', fontSize:'12px' }}>{p.diseno || '—'}</td>
                       <td style={{ textAlign:'center', color:'var(--gray-400)' }}>{fmtMoney(p.precio_venta)}</td>
                       <td style={{ textAlign:'center', color:'var(--gray-400)', fontSize:'12px' }}>{p.precio_unitario ? `$${parseFloat(p.precio_unitario).toFixed(2)}` : '—'}</td>
                       {p.ubicaciones.map(u => {
