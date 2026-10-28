@@ -169,6 +169,7 @@ export default function InventarioPage() {
       setMsg({ type:'error', text: e.response?.data?.error || 'Error al crear producto' })
     } finally { setSaving(false) }
   }
+    const [todosProductos, setTodosProductos] = useState([])
     async function handleOcultarProducto(id, nombre) {
     if (!confirm(`¿Ocultar "${nombre}"? No aparecerá en el inventario pero se puede reactivar.`)) return
     try {
