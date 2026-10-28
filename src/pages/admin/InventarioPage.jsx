@@ -380,6 +380,7 @@ export default function InventarioPage() {
       </div>
 
       {msg && <Alert type={msg.type === 'ok' ? 'ok' : 'error'}>{msg.text}</Alert>}
+      {importMsg && <Alert type={importMsg.type === 'ok' ? 'ok' : 'error'}>{importMsg.text}</Alert>}
 
       {/* Formulario nuevo producto */}
       {showProd && (
