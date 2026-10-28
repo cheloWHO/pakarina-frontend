@@ -525,7 +525,52 @@ export default function InventarioPage() {
           </div>
         </Card>
       )}
-
+            {/* Lista de todos los productos */}
+      {vista === 'productos' && (
+        <Card>
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
+              <thead>
+                <tr style={{ borderBottom:'2px solid var(--gray-100)' }}>
+                  <th style={{ textAlign:'left', padding:'8px 0', fontWeight:600, color:'var(--gray-600)' }}>Producto</th>
+                  <th style={{ textAlign:'left', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>SKU</th>
+                  <th style={{ textAlign:'left', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Color</th>
+                  <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Precio venta</th>
+                  <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Estado</th>
+                  <th style={{ padding:'8px' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {todosProductos.length === 0
+                  ? <tr><td colSpan="6" style={{ textAlign:'center', padding:'2rem', color:'var(--gray-400)' }}>Sin productos</td></tr>
+                  : todosProductos.map(p => (
+                    <tr key={p.id} style={{ borderBottom:'1px solid var(--gray-100)', opacity: p.activo ? 1 : 0.5 }}>
+                      <td style={{ padding:'10px 0', fontWeight:500 }}>
+                        {p.nombre}
+                        {p.descripcion && <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>{p.descripcion}</div>}
+                      </td>
+                      <td style={{ padding:'8px', color:'var(--gray-500)', fontSize:'12px' }}>{p.sku || '—'}</td>
+                      <td style={{ padding:'8px', color:'var(--gray-500)', fontSize:'12px' }}>{p.color || '—'}</td>
+                      <td style={{ textAlign:'center', color:'var(--gray-400)' }}>{fmtMoney(p.precio_venta)}</td>
+                      <td style={{ textAlign:'center' }}>
+                        <Badge color={p.activo ? 'green' : 'gray'}>{p.activo ? 'Activo' : 'Oculto'}</Badge>
+                      </td>
+                      <td style={{ textAlign:'center', padding:'8px' }}>
+                        <div style={{ display:'flex', gap:'4px', justifyContent:'center' }}>
+                          {!p.activo && (
+                            <Btn variant="ghost" onClick={() => handleReactivarProducto(p.id, p.nombre)}>👁️</Btn>
+                          )}
+                          <Btn variant="ghost" onClick={() => handleEliminarProducto(p.id, p.nombre)}>🗑️</Btn>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
       {/* Historial de ventas */}
       {vista === 'ventas' && (
         <Card>
