@@ -20,6 +20,7 @@ const PRODUCTO_INICIAL = {
   nombre:'', precio_venta:'', stock_minimo:'0',
   sku:'', descripcion:'', color:'', foto_url:'', precio_unitario:'',
 }
+
 function CamposProducto({ data, setData }) {
   return (
     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
@@ -63,13 +64,14 @@ export default function InventarioPage() {
   const esGlobal     = !user?.local_id
   const localId      = user?.local_id
 
-  const [stock,      setStock]      = useState([])
-  const [productos,  setProductos]  = useState([])
-  const [bebes,      setBebes]      = useState([])
-  const [ventas,     setVentas]     = useState([])
-  const [loading,    setLoading]    = useState(true)
-  const [msg,        setMsg]        = useState(null)
-  const [saving,     setSaving]     = useState(false)
+  const [stock,          setStock]          = useState([])
+  const [productos,      setProductos]      = useState([])
+  const [todosProductos, setTodosProductos] = useState([])
+  const [bebes,          setBebes]          = useState([])
+  const [ventas,         setVentas]         = useState([])
+  const [loading,        setLoading]        = useState(true)
+  const [msg,            setMsg]            = useState(null)
+  const [saving,         setSaving]         = useState(false)
 
   const [vista,      setVista]      = useState('stock')
   const [showMov,    setShowMov]    = useState(false)
@@ -171,39 +173,7 @@ export default function InventarioPage() {
       setMsg({ type:'error', text: e.response?.data?.error || 'Error al crear producto' })
     } finally { setSaving(false) }
   }
-    const [todosProductos, setTodosProductos] = useState([])
-      async function handleReactivarProducto(id, nombre) {
-    if (!confirm(`¿Reactivar "${nombre}"?`)) return
-    try {
-      await api.patch(`/api/inventario/productos/${id}/reactivar`)
-      setMsg({ type:'ok', text:'Producto reactivado correctamente' })
-      load()
-    } catch(e) {
-      setMsg({ type:'error', text: e.response?.data?.error || 'Error al reactivar producto' })
-    }
-  }
-    async function handleOcultarProducto(id, nombre) {
-    if (!confirm(`¿Ocultar "${nombre}"? No aparecerá en el inventario pero se puede reactivar.`)) return
-    try {
-      await api.patch(`/api/inventario/productos/${id}/ocultar`)
-      setMsg({ type:'ok', text:'Producto ocultado correctamente' })
-      load()
-    } catch(e) {
-      setMsg({ type:'error', text: e.response?.data?.error || 'Error al ocultar producto' })
-    }
-  }
 
-  async function handleEliminarProducto(id, nombre) {
-    if (!confirm(`¿ELIMINAR "${nombre}" definitivamente? Esta acción no se puede deshacer.`)) return
-    try {
-      await api.delete(`/api/inventario/productos/${id}`)
-      setMsg({ type:'ok', text:'Producto eliminado correctamente' })
-      load()
-    } catch(e) {
-      setMsg({ type:'error', text: e.response?.data?.error || 'Error al eliminar producto' })
-    }
-  }
-  
   async function handleEditarProducto(e) {
     e.preventDefault()
     setSaving(true); setMsg(null)
@@ -226,6 +196,39 @@ export default function InventarioPage() {
     } finally { setSaving(false) }
   }
 
+  async function handleReactivarProducto(id, nombre) {
+    if (!confirm(`¿Reactivar "${nombre}"?`)) return
+    try {
+      await api.patch(`/api/inventario/productos/${id}/reactivar`)
+      setMsg({ type:'ok', text:'Producto reactivado correctamente' })
+      load()
+    } catch(e) {
+      setMsg({ type:'error', text: e.response?.data?.error || 'Error al reactivar producto' })
+    }
+  }
+
+  async function handleOcultarProducto(id, nombre) {
+    if (!confirm(`¿Ocultar "${nombre}"? No aparecerá en el inventario pero se puede reactivar.`)) return
+    try {
+      await api.patch(`/api/inventario/productos/${id}/ocultar`)
+      setMsg({ type:'ok', text:'Producto ocultado correctamente' })
+      load()
+    } catch(e) {
+      setMsg({ type:'error', text: e.response?.data?.error || 'Error al ocultar producto' })
+    }
+  }
+
+  async function handleEliminarProducto(id, nombre) {
+    if (!confirm(`¿ELIMINAR "${nombre}" definitivamente? Esta acción no se puede deshacer.`)) return
+    try {
+      await api.delete(`/api/inventario/productos/${id}`)
+      setMsg({ type:'ok', text:'Producto eliminado correctamente' })
+      load()
+    } catch(e) {
+      setMsg({ type:'error', text: e.response?.data?.error || 'Error al eliminar producto' })
+    }
+  }
+
   const stockPorProducto = productos.map(p => ({
     ...p,
     ubicaciones: UBICACIONES.map(u => {
@@ -234,13 +237,13 @@ export default function InventarioPage() {
     }),
   }))
 
-  const prodSel           = productos.find(p => p.id === parseInt(venta.producto_id))
-  const descuentoMonto    = parseFloat(venta.descuento || 0)
-  const descuentoPct      = prodSel && prodSel.precio_venta > 0 ? parseFloat(((descuentoMonto / prodSel.precio_venta) * 100).toFixed(2)) : 0
-  const precioConDesc     = prodSel ? parseFloat((prodSel.precio_venta - descuentoMonto).toFixed(2)) : 0
-  const ventaTotal        = prodSel ? parseFloat((precioConDesc * parseInt(venta.cantidad || 1)).toFixed(2)) : 0
-  const ventaComision     = venta.metodo_pago === 'tarjeta' ? parseFloat((ventaTotal * 0.06).toFixed(2)) : 0
-  const ventaNeto         = parseFloat((ventaTotal - ventaComision).toFixed(2))
+  const prodSel        = productos.find(p => p.id === parseInt(venta.producto_id))
+  const descuentoMonto = parseFloat(venta.descuento || 0)
+  const descuentoPct   = prodSel && prodSel.precio_venta > 0 ? parseFloat(((descuentoMonto / prodSel.precio_venta) * 100).toFixed(2)) : 0
+  const precioConDesc  = prodSel ? parseFloat((prodSel.precio_venta - descuentoMonto).toFixed(2)) : 0
+  const ventaTotal     = prodSel ? parseFloat((precioConDesc * parseInt(venta.cantidad || 1)).toFixed(2)) : 0
+  const ventaComision  = venta.metodo_pago === 'tarjeta' ? parseFloat((ventaTotal * 0.06).toFixed(2)) : 0
+  const ventaNeto      = parseFloat((ventaTotal - ventaComision).toFixed(2))
 
   if (loading) return <Spinner />
 
@@ -448,7 +451,7 @@ export default function InventarioPage() {
 
       {/* Tabs */}
       <div style={{ display:'flex', gap:'0', borderBottom:'2px solid var(--gray-100)' }}>
-              {[['stock','Stock'], ['ventas','Historial de ventas'], ['productos','Productos']].map(([k, l]) => (
+        {[['stock','Stock'], ['ventas','Historial de ventas'], ['productos','Productos']].map(([k, l]) => (
           <div key={k} onClick={() => setVista(k)}
             style={{
               padding:'8px 20px', cursor:'pointer', fontSize:'13px', fontWeight: vista === k ? 600 : 400,
@@ -506,7 +509,7 @@ export default function InventarioPage() {
                           </td>
                         )
                       })}
-                       <td style={{ textAlign:'center', padding:'8px' }}>
+                      <td style={{ textAlign:'center', padding:'8px' }}>
                         <div style={{ display:'flex', gap:'4px', justifyContent:'center' }}>
                           <Btn variant="ghost" onClick={() => {
                             setEditProd({ ...p })
@@ -525,7 +528,8 @@ export default function InventarioPage() {
           </div>
         </Card>
       )}
-            {/* Lista de todos los productos */}
+
+      {/* Lista de todos los productos */}
       {vista === 'productos' && (
         <Card>
           <div style={{ overflowX:'auto' }}>
@@ -571,6 +575,7 @@ export default function InventarioPage() {
           </div>
         </Card>
       )}
+
       {/* Historial de ventas */}
       {vista === 'ventas' && (
         <Card>
