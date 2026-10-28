@@ -448,7 +448,7 @@ export default function InventarioPage() {
 
       {/* Tabs */}
       <div style={{ display:'flex', gap:'0', borderBottom:'2px solid var(--gray-100)' }}>
-        {[['stock','Stock'], ['ventas','Historial de ventas']].map(([k, l]) => (
+              {[['stock','Stock'], ['ventas','Historial de ventas'], ['productos','Productos']].map(([k, l]) => (
           <div key={k} onClick={() => setVista(k)}
             style={{
               padding:'8px 20px', cursor:'pointer', fontSize:'13px', fontWeight: vista === k ? 600 : 400,
