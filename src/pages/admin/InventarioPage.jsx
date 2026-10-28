@@ -656,6 +656,7 @@ export default function InventarioPage() {
                   <th style={{ textAlign:'left', padding:'8px 0', fontWeight:600, color:'var(--gray-600)' }}>Producto</th>
                   <th style={{ textAlign:'left', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>SKU</th>
                   <th style={{ textAlign:'left', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Color</th>
+                  <th style={{ textAlign:'left', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Diseño</th>
                   <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Precio venta</th>
                   <th style={{ textAlign:'center', padding:'8px', fontWeight:600, color:'var(--gray-600)' }}>Estado</th>
                   <th style={{ padding:'8px' }}></th>
