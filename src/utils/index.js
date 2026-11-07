@@ -41,7 +41,6 @@ export function colorVencimiento(dias) {
 export const METODO_LABEL = {
   efectivo:           'Efectivo',
   transferencia_prod: 'Transferencia Produbanco',
-  transferencia_pich: 'Transferencia Pichincha',
   interbancaria:      'Interbancaria',
   tarjeta:            'Tarjeta Payphone',
 }
