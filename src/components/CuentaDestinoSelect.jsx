@@ -5,9 +5,12 @@ import { useCuentas } from '../hooks/useCuentas'
 // Desplegable "Cuenta destino" para los formularios de pago.
 // Muestra solo números enmascarados, como los devuelve la API:
 // "Produbanco ...6258 (Clases)" y "Produbanco ...7706 (Productos)".
-// Si la API falla (el backend aún no está publicado), no renderiza nada y
-// el pago sigue como antes, solo con banco_destino: nunca se deja el
-// desplegable vacío ni se bloquea el registro.
+// Si la API falla (el backend aún no está publicado), no renderiza el
+// desplegable y el pago sigue como antes, solo con banco_destino: nunca
+// se deja el desplegable vacío ni se bloquea el registro. Pero el fallo
+// ya no es silencioso: mientras carga se ve "Cargando cuentas…" y si
+// falla se avisa con un texto discreto, para que no parezca que el campo
+// no existe.
 export default function CuentaDestinoSelect({ value, onChange }) {
   const { cuentas, cargando, error } = useCuentas()
 
@@ -20,8 +23,13 @@ export default function CuentaDestinoSelect({ value, onChange }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cuentas])
 
-  if (error || (!cargando && cuentas.length === 0)) return null
-  if (cargando) return null
+  if (cargando) {
+    return <div style={{ fontSize:'12px', color:'var(--gray-400)' }}>Cargando cuentas…</div>
+  }
+  if (error) {
+    return <div style={{ fontSize:'12px', color:'var(--warn)' }}>No se pudieron cargar las cuentas del banco. El pago se registrará sin cuenta asignada.</div>
+  }
+  if (cuentas.length === 0) return null
 
   return (
     <Select

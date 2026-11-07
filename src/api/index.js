@@ -17,6 +17,7 @@ export const planesAPI = {
   listar:        (params)           => api.get('/api/planes', { params }),
   obtener:       (id)               => api.get(`/api/planes/${id}`),
   registrarPago: (data)             => api.post('/api/planes', data),
+  registrarAbono:(id, data)        => api.post(`/api/planes/${id}/pagos`, data),
   agregarClases: (id, clases_extra) => api.patch(`/api/planes/${id}/agregar-clases`, { clases_extra }),
   editarFecha:   (id, fecha_inicio) => api.patch(`/api/planes/${id}`, { fecha_inicio }),
 }
@@ -34,10 +35,10 @@ export const finanzasAPI = {
   listarGastos:   (params) => api.get('/api/finanzas/gastos',  { params }),
   registrarGasto: (data)   => api.post('/api/finanzas/gastos', data),
   // Cuentas bancarias (solo números enmascarados) y precios reales.
-  // Viven en la rama fix/comprobantes-cuentas del backend: hasta que se
-  // fusione, estas llamadas devuelven 404 y el frontend sigue con su
-  // comportamiento actual (ver CuentaDestinoSelect y verificarPrecios).
-  listarCuentas:   ()         => api.get('/api/finanzas/cuentas'),
+  // El servidor gratuito (Render) tarda ~20-30 s en despertar tras un
+  // rato sin uso: esta llamada lleva 30 s de espera para no fallar en
+  // el primer intento. Si aun así falla, useCuentas reintenta una vez.
+  listarCuentas:   ()         => api.get('/api/finanzas/cuentas', { timeout: 30000 }),
   listarServicios: ()         => api.get('/api/finanzas/servicios'),
   subirComprobante:(formData) => api.post('/api/finanzas/comprobantes', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
