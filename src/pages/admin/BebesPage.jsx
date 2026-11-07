@@ -6,7 +6,7 @@ import { fmtFecha, edadMeses, METODO_LABEL, TIPO_CLASE_LABEL } from '../../utils
 
 const SERVICIOS = [
   { id:1, nombre:'Clase Post Vacuna',  precio:12,  clases:1,  vigencia:0 },
-  { id:2, nombre:'Evaluación',         precio:10,  clases:1,  vigencia:0 },
+  { id:2, nombre:'Evaluación',         precio:12,  clases:1,  vigencia:0 },
   { id:3, nombre:'Baby Spa',           precio:15,  clases:1,  vigencia:0 },
   { id:4, nombre:'Plan Mensual #1',    precio:54,  clases:4,  vigencia:30 },
   { id:5, nombre:'Plan Mensual #2',    precio:90,  clases:8,  vigencia:30 },
