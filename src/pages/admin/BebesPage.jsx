@@ -33,6 +33,13 @@ const LOCALES = [
 // Métodos que llegan a una cuenta bancaria (los demás son efectivo o tarjeta)
 const METODO_CON_CUENTA = ['transferencia_prod', 'interbancaria']
 
+// Servicios que se pagan en dos partes: mitad al reservar, mitad el día
+// de la clase. Los planes se pagan completos como siempre.
+const SERVICIOS_PARCIALES = [1, 2] // 1 Clase Post Vacuna, 2 Evaluación
+
+// Fecha de hoy en formato local YYYY-MM-DD (para el pago restante).
+const hoyLocal = () => new Date().toLocaleDateString('en-CA')
+
 // Verificación SOLO LECTURA: compara los precios que muestra esta pantalla
 // con los reales del backend (tabla servicios, GET /api/finanzas/servicios).
 // Solo avisa en la consola del navegador si hay diferencia; NUNCA cambia
@@ -77,10 +84,18 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [nuevoPlanMetodo, setNuevoPlanMetodo] = useState('efectivo')
   const [nuevoPlanRef,    setNuevoPlanRef]    = useState('')
   const [nuevoPlanFecha,  setNuevoPlanFecha]  = useState('')
-  const [savingNuevoPlan, setSavingNuevoPlan] = useState(false)
+  const [nuevoPlanMonto,  setNuevoPlanMonto]  = useState('')
   const [nuevoPlanCuentaId, setNuevoPlanCuentaId] = useState(null)
   const [ultimoPagoId, setUltimoPagoId] = useState(null)
   const [comprobanteSubido, setComprobanteSubido] = useState(false)
+  // Pago restante (segunda mitad de Evaluación / Post Vacuna)
+  const [planIdAbono, setPlanIdAbono] = useState(null)
+  const [abonoMonto, setAbonoMonto] = useState('')
+  const [abonoMetodo, setAbonoMetodo] = useState('efectivo')
+  const [abonoRef, setAbonoRef] = useState('')
+  const [abonoFecha, setAbonoFecha] = useState('')
+  const [abonoCuentaId, setAbonoCuentaId] = useState(null)
+  const [savingAbono, setSavingAbono] = useState(false)
 
   useEffect(() => {
     planesAPI.listar({ bebe_id: bebeInicial.id })
@@ -170,8 +185,74 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     }
   }
 
+  // Servicio elegido en el formulario Nuevo plan y su pago parcial.
+  const srvNuevo = SERVICIOS.find(s => s.id === nuevoPlanSrvId)
+  const esParcialNuevo = !!(srvNuevo && SERVICIOS_PARCIALES.includes(srvNuevo.id))
+  const montoNuevoNum = parseFloat(nuevoPlanMonto)
+  const saldoNuevo = esParcialNuevo && !Number.isNaN(montoNuevoNum)
+    ? Math.max(0, parseFloat((srvNuevo.precio - montoNuevoNum).toFixed(2)))
+    : null
+
+  function elegirServicioNuevoPlan(s) {
+    setNuevoPlanSrvId(s.id)
+    // Para Evaluación y Post Vacuna el pago inicial es la mitad por defecto.
+    setNuevoPlanMonto(SERVICIOS_PARCIALES.includes(s.id) ? (s.precio / 2).toFixed(2) : '')
+  }
+
+  function abrirAbono(p) {
+    setPlanIdAbono(p.id)
+    setAbonoMonto(Number(p.saldo_pendiente).toFixed(2))
+    setAbonoMetodo('efectivo')
+    setAbonoRef('')
+    setAbonoFecha(hoyLocal())
+    setAbonoCuentaId(null)
+    setMsg(null)
+  }
+
+  function cancelarAbono() {
+    setPlanIdAbono(null); setAbonoMonto(''); setAbonoRef(''); setAbonoCuentaId(null)
+  }
+
+  async function handleRegistrarAbono(p) {
+    const monto = parseFloat(abonoMonto)
+    if (Number.isNaN(monto) || monto <= 0 || monto > Number(p.saldo_pendiente)) {
+      setMsg({ type: 'error', text: `El monto debe ser mayor a $0 y no mayor al saldo pendiente ($${Number(p.saldo_pendiente).toFixed(2)})` })
+      return
+    }
+    setSavingAbono(true); setMsg(null)
+    try {
+      const res = await planesAPI.registrarAbono(p.id, {
+        monto,
+        metodo_pago: abonoMetodo,
+        banco_destino: BANCO_POR_METODO[abonoMetodo],
+        cuenta_id: abonoCuentaId || undefined,
+        referencia: abonoRef || null,
+        fecha: abonoFecha || null,
+      })
+      const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
+      setPlanes(fresh.data)
+      setPlanIdAbono(null); setAbonoMonto(''); setAbonoRef(''); setAbonoCuentaId(null)
+      setUltimoPagoId(res.data?.pago_id || null)
+      setComprobanteSubido(false)
+      const restante = res.data?.saldo_pendiente || 0
+      setMsg({ type: 'ok', text: `Pago de $${monto.toFixed(2)} registrado. ${restante > 0 ? `Quedan pendientes $${restante.toFixed(2)}.` : 'Plan pagado por completo.'}` })
+    } catch (e) {
+      const status = e.response?.status
+      setMsg({ type: 'error', text: status === 404
+        ? 'El servidor aún no tiene activa esta función (falta publicar la parte del servidor).'
+        : (e.response?.data?.error || 'Error al registrar el pago') })
+    } finally { setSavingAbono(false) }
+  }
+
   async function handleNuevoPlan() {
     if (!nuevoPlanSrvId) return
+    if (esParcialNuevo) {
+      const m = parseFloat(nuevoPlanMonto)
+      if (Number.isNaN(m) || m <= 0 || m > srvNuevo.precio) {
+        setMsg({ type: 'error', text: `El monto a pagar ahora debe ser mayor a $0 y no mayor a $${srvNuevo.precio.toFixed(2)}` })
+        return
+      }
+    }
     setSavingNuevoPlan(true); setMsg(null)
     try {
       const res = await planesAPI.registrarPago({
@@ -183,12 +264,14 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
         cuenta_id:     nuevoPlanCuentaId || undefined,
         referencia:    nuevoPlanRef || null,
         fecha_inicio:  nuevoPlanFecha || null,
+        monto_inicial: esParcialNuevo && nuevoPlanMonto !== '' ? parseFloat(nuevoPlanMonto) : undefined,
       })
       const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
       setPlanes(fresh.data)
       setShowNuevoPlan(false)
       setNuevoPlanSrvId(null); setNuevoPlanMetodo('efectivo')
       setNuevoPlanRef(''); setNuevoPlanFecha(''); setNuevoPlanCuentaId(null)
+      setNuevoPlanMonto('')
       setUltimoPagoId(res.data?.pago_id || null)
       setComprobanteSubido(false)
       setMsg({ type: 'ok', text: 'Plan registrado correctamente' })
@@ -266,7 +349,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
             <div style={{ fontWeight:600, fontSize:'13px', marginBottom:'12px' }}>Registrar nuevo plan</div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', marginBottom:'12px' }}>
               {SERVICIOS.map(s => (
-                <div key={s.id} onClick={() => setNuevoPlanSrvId(s.id)}
+                <div key={s.id} onClick={() => elegirServicioNuevoPlan(s)}
                   style={{ border: nuevoPlanSrvId === s.id ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: nuevoPlanSrvId === s.id ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-md)', padding:'8px', cursor:'pointer' }}>
                   <div style={{ fontSize:'11px', fontWeight:600 }}>{s.nombre}</div>
                   <div style={{ fontSize:'10px', color:'var(--gray-400)' }}>{s.clases} clase{s.clases>1?'s':''} · {s.vigencia ? s.vigencia+' días' : 'sin vigencia'}</div>
@@ -282,6 +365,19 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 </div>
               ))}
             </div>
+            {esParcialNuevo && (
+              <div style={{ background:'#fff', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'10px', marginBottom:'12px' }}>
+                <Input label="Monto a pagar ahora ($)" type="text" inputMode="decimal"
+                  value={nuevoPlanMonto}
+                  onChange={e => setNuevoPlanMonto(e.target.value.replace(',', '.'))} />
+                <div style={{ fontSize:'12px', color:'var(--gray-600)', marginTop:'6px' }}>
+                  Total ${srvNuevo.precio.toFixed(2)} · Pagas ahora ${Number.isNaN(montoNuevoNum) ? '0.00' : montoNuevoNum.toFixed(2)} · Queda pendiente ${saldoNuevo !== null ? saldoNuevo.toFixed(2) : '0.00'}
+                </div>
+                <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>
+                  Evaluación y Post Vacuna se pagan en dos partes: la otra mitad se paga el día de la clase.
+                </div>
+              </div>
+            )}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'12px' }}>
               <Input label="Fecha de inicio (opcional)" type="date" value={nuevoPlanFecha}
                 onChange={e => setNuevoPlanFecha(e.target.value)} />
@@ -340,6 +436,12 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 <span>Usadas: <strong>{p.clases_usadas}</strong></span>
                 <span>Restantes: <strong style={{ color:'var(--brand-dark)' }}>{p.clases_restantes}</strong></span>
               </div>
+              {p.saldo_pendiente > 0 && (
+                <div style={{ display:'flex', gap:'12px', fontSize:'13px', marginBottom:'10px' }}>
+                  <span>Pagado: <strong>${Number(p.total_pagado || 0).toFixed(2)}</strong></span>
+                  <span>Pendiente: <strong style={{ color:'var(--warn)' }}>${Number(p.saldo_pendiente).toFixed(2)}</strong></span>
+                </div>
+              )}
               {p.estado === 'activo' && (
                 planIdExtra === p.id ? (
                   <div style={{ display:'flex', gap:'8px', alignItems:'flex-end' }}>
@@ -353,6 +455,45 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 ) : (
                   <Btn size="sm" variant="ghost" onClick={() => setPlanIdExtra(p.id)}>
                     + Agregar clases extra
+                  </Btn>
+                )
+              )}
+              {p.saldo_pendiente > 0 && (
+                planIdAbono === p.id ? (
+                  <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px', marginTop:'10px' }}>
+                    <div style={{ fontWeight:600, fontSize:'13px', marginBottom:'10px' }}>Registrar pago restante</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'10px' }}>
+                      <Input label="Monto ($)" type="text" inputMode="decimal"
+                        value={abonoMonto} onChange={e => setAbonoMonto(e.target.value.replace(',', '.'))} />
+                      <Input label="Fecha del pago" type="date"
+                        value={abonoFecha} onChange={e => setAbonoFecha(e.target.value)} />
+                    </div>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:'8px', marginBottom:'10px' }}>
+                      {Object.entries(METODO_LABEL).map(([key, label]) => (
+                        <div key={key} onClick={() => setAbonoMetodo(key)}
+                          style={{ border: abonoMetodo === key ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: abonoMetodo === key ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-sm)', padding:'5px 10px', fontSize:'11px', cursor:'pointer', fontWeight: abonoMetodo === key ? 600 : 400, color: abonoMetodo === key ? 'var(--accent)' : 'var(--gray-600)' }}>
+                          {label}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'10px' }}>
+                      <Input label="Referencia (opcional)" value={abonoRef}
+                        onChange={e => setAbonoRef(e.target.value)} placeholder="TRF-001" />
+                      <div />
+                    </div>
+                    {METODO_CON_CUENTA.includes(abonoMetodo) && (
+                      <div style={{ marginBottom:'10px' }}>
+                        <CuentaDestinoSelect value={abonoCuentaId} onChange={setAbonoCuentaId} />
+                      </div>
+                    )}
+                    <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+                      <Btn variant="ghost" onClick={cancelarAbono}>Cancelar</Btn>
+                      <Btn onClick={() => handleRegistrarAbono(p)} loading={savingAbono}>Guardar pago</Btn>
+                    </div>
+                  </div>
+                ) : (
+                  <Btn size="sm" onClick={() => abrirAbono(p)} style={{ marginTop:'8px' }}>
+                    Registrar pago restante
                   </Btn>
                 )
               )}
@@ -456,6 +597,7 @@ export default function BebesPage() {
   const [ref,         setRef]         = useState('')
   const [fechaInicio, setFechaInicio] = useState('')
   const [cuentaId,    setCuentaId]    = useState(null)
+  const [montoInicial, setMontoInicial] = useState('')
   const [pagoIdCreado, setPagoIdCreado] = useState(null)
   const [comprobanteSubido, setComprobanteSubido] = useState(false)
 
@@ -474,11 +616,29 @@ export default function BebesPage() {
   useEffect(() => { loadBebes(); verificarPrecios() }, [localId])
 
   const srv      = SERVICIOS.find(s => s.id === srvId)
-  const comision = metodo === 'tarjeta' && srv ? parseFloat((srv.precio * 0.06).toFixed(2)) : 0
-  const neto     = srv ? parseFloat((srv.precio - comision).toFixed(2)) : 0
+  // Pago en dos partes (solo Evaluación y Post Vacuna): el monto a cobrar
+  // ahora es la mitad por defecto y el resto queda pendiente del plan.
+  const esParcialWizard = !!(srv && SERVICIOS_PARCIALES.includes(srv.id))
+  const montoInicialNum = parseFloat(montoInicial)
+  const montoACobrar = esParcialWizard && !Number.isNaN(montoInicialNum) ? montoInicialNum : (srv ? srv.precio : 0)
+  const saldoWizard = esParcialWizard && srv ? Math.max(0, parseFloat((srv.precio - montoACobrar).toFixed(2))) : 0
+  const comision = metodo === 'tarjeta' && srv ? parseFloat((montoACobrar * 0.06).toFixed(2)) : 0
+  const neto     = srv ? parseFloat((montoACobrar - comision).toFixed(2)) : 0
   const localIdFinal = esGlobal ? parseInt(bebe.local_id_form) : localId
 
+  function elegirServicioWizard(s) {
+    setSrvId(s.id)
+    setMontoInicial(SERVICIOS_PARCIALES.includes(s.id) ? (s.precio / 2).toFixed(2) : '')
+  }
+
   async function handleRegistrar() {
+    if (esParcialWizard) {
+      const m = parseFloat(montoInicial)
+      if (Number.isNaN(m) || m <= 0 || m > srv.precio) {
+        setFormErr(`El monto a pagar ahora debe ser mayor a $0 y no mayor a $${srv.precio.toFixed(2)}`)
+        return
+      }
+    }
     setSaving(true); setFormErr('')
     try {
       const bRes = await bebesAPI.crear({
@@ -490,6 +650,7 @@ export default function BebesPage() {
         metodo_pago: metodo, banco_destino: BANCO_POR_METODO[metodo],
         cuenta_id: cuentaId || undefined,
         referencia: ref || null, fecha_inicio: fechaInicio || null,
+        monto_inicial: esParcialWizard && montoInicial !== '' ? parseFloat(montoInicial) : undefined,
       })
       setPagoIdCreado(pRes.data?.pago_id || null)
       setComprobanteSubido(false)
@@ -506,7 +667,7 @@ export default function BebesPage() {
   function resetForm() {
     setBebe({ nombre_completo:'', fecha_nacimiento:'', grupo_id:'', email_representante:'', whatsapp_representante:'', nombre_tutor:'', local_id_form: localId || '' })
     setSrvId(null); setMetodo('efectivo'); setRef(''); setFechaInicio(''); setPaso(0)
-    setCuentaId(null); setPagoIdCreado(null); setComprobanteSubido(false)
+    setCuentaId(null); setMontoInicial(''); setPagoIdCreado(null); setComprobanteSubido(false)
     setSuccess(null); setFormErr(''); setShowForm(false)
   }
 
@@ -593,7 +754,7 @@ export default function BebesPage() {
                     <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
                       <label style={{ fontSize:'12px', color:'var(--gray-600)', fontWeight:500 }}>Edad</label>
                       <div style={{ height:'38px', display:'flex', alignItems:'center' }}>
-                        <Badge color="green">{edadMeses(bebe.fecha_nacimiento)}</Badge> : <span style={{ color:'var(--gray-400)', fontSize:'13px' }}>— meses</span>}
+                        <Badge color="green">{edadMeses(bebe.fecha_nacimiento)}</Badge> : <span style={{ color:'var(--gray-400)', fontSize:'13px' }}>— meses</span>
                       </div>
                     </div>
                     {esGlobal && (
@@ -634,7 +795,7 @@ export default function BebesPage() {
                 <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px' }}>
                     {SERVICIOS.map(s => (
-                      <div key={s.id} onClick={() => setSrvId(s.id)}
+                      <div key={s.id} onClick={() => elegirServicioWizard(s)}
                         style={{ border: srvId === s.id ? '2px solid var(--accent)' : '1px solid var(--gray-200)', background: srvId === s.id ? 'var(--accent-light)' : '#fff', borderRadius:'var(--radius-md)', padding:'10px 8px', cursor:'pointer' }}>
                         <div style={{ fontSize:'12px', fontWeight:600 }}>{s.nombre}</div>
                         <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>{s.clases} clase{s.clases>1?'s':''} · {s.vigencia ? s.vigencia+' días' : 'sin vigencia'}</div>
@@ -659,10 +820,28 @@ export default function BebesPage() {
                       </div>
                     ))}
                   </div>
+                  {esParcialWizard && (
+                    <div style={{ background:'#fff', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'10px' }}>
+                      <Input label="Monto a pagar ahora ($)" type="text" inputMode="decimal"
+                        value={montoInicial}
+                        onChange={e => setMontoInicial(e.target.value.replace(',', '.'))} />
+                      <div style={{ fontSize:'12px', color:'var(--gray-600)', marginTop:'6px' }}>
+                        Total ${srv?.precio.toFixed(2)} · Pagas ahora ${montoACobrar.toFixed(2)} · Queda pendiente ${saldoWizard.toFixed(2)}
+                      </div>
+                      <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>
+                        Evaluación y Post Vacuna se pagan en dos partes: la otra mitad se paga el día de la clase.
+                      </div>
+                    </div>
+                  )}
                   <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px' }}>
                     <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0', color:'var(--gray-600)' }}>
-                      <span>Monto cobrado al cliente</span><span>${srv?.precio.toFixed(2)}</span>
+                      <span>Monto cobrado al cliente</span><span>${montoACobrar.toFixed(2)}</span>
                     </div>
+                    {esParcialWizard && (
+                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0', color:'var(--gray-600)' }}>
+                        <span>Queda pendiente</span><span>${saldoWizard.toFixed(2)}</span>
+                      </div>
+                    )}
                     {metodo === 'tarjeta' && <>
                       <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', padding:'6px 8px', marginTop:'6px', background:'var(--brand-light)', borderRadius:'var(--radius-sm)', color:'var(--brand-dark)' }}>
                         <span>Ingreso neto (después de comisión Payphone)</span><span>${neto.toFixed(2)}</span>
@@ -697,7 +876,8 @@ export default function BebesPage() {
                       ['Vigencia',    srv?.vigencia ? srv.vigencia + ' días' : 'Sin vigencia'],
                       ['Inicio plan', fechaInicio || 'Hoy'],
                       ['Método',      METODO_LABEL[metodo]],
-                      ['Cobrado',     '$' + srv?.precio.toFixed(2)],
+                      ['Cobrado',     '$' + montoACobrar.toFixed(2)],
+                      ...(esParcialWizard ? [['Pendiente', '$' + saldoWizard.toFixed(2)]] : []),
                     ].map(([k, v]) => (
                       <div key={k} style={{ display:'flex', justifyContent:'space-between', fontSize:'13px' }}>
                         <span style={{ color:'var(--gray-400)' }}>{k}</span>

@@ -26,6 +26,11 @@ export default function ComprobanteUploader({ pagoId, ventaId, onSubido }) {
   const [msg, setMsg] = useState(null)
   const [subido, setSubido] = useState(false)
   const inputRef = useRef(null)
+  // Campos que el usuario ya escribió a mano: el OCR no los sobrescribe
+  // cuando termina tarde. Importa con las fotos de efectivo: el lector
+  // puede tardar y sugerir un número de un billete después de que el
+  // usuario ya escribió el monto real.
+  const tocado = useRef({})
 
   function elegirArchivo(file) {
     if (!file) return
@@ -41,6 +46,7 @@ export default function ComprobanteUploader({ pagoId, ventaId, onSubido }) {
     setArchivo(file)
     setPreview(URL.createObjectURL(file))
     setSubido(false)
+    tocado.current = {}
     leerCaptura(file)
   }
 
@@ -60,10 +66,14 @@ export default function ComprobanteUploader({ pagoId, ventaId, onSubido }) {
       const amount = parseAmountFromText(text)
       const date = parseDateFromText(text)
       const guess = guessFromText(text)
-      if (amount !== null) setMonto(String(amount))
-      if (date) setFecha(date)
-      if (guess.ref) setReferencia(guess.ref)
-      if (guess.name) setNombre(guess.name)
+      // Solo se rellenan los campos que el usuario no escribió a mano.
+      // En una foto de efectivo el OCR no encuentra monto/fecha/referencia
+      // y los campos quedan vacíos para escribirlos; si encuentra algo,
+      // igual se puede corregir antes de guardar.
+      if (amount !== null && !tocado.current.monto) setMonto(String(amount))
+      if (date && !tocado.current.fecha) setFecha(date)
+      if (guess.ref && !tocado.current.referencia) setReferencia(guess.ref)
+      if (guess.name && !tocado.current.nombre) setNombre(guess.name)
       setOcr('listo')
     } catch (e) {
       console.error('OCR falló:', e)
@@ -103,6 +113,7 @@ export default function ComprobanteUploader({ pagoId, ventaId, onSubido }) {
     setArchivo(null); setPreview(null); setOcr('idle'); setProgreso(0)
     setMonto(''); setFecha(''); setReferencia(''); setNombre('')
     setMsg(null); setSubido(false)
+    tocado.current = {}
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -166,13 +177,13 @@ export default function ComprobanteUploader({ pagoId, ventaId, onSubido }) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <Input label="Monto detectado ($)" type="text" inputMode="decimal" placeholder="0.00"
-                  value={monto} onChange={e => setMonto(e.target.value.replace(',', '.'))} />
+                  value={monto} onChange={e => { tocado.current.monto = true; setMonto(e.target.value.replace(',', '.')) }} />
                 <Input label="Fecha detectada" type="date"
-                  value={fecha} onChange={e => setFecha(e.target.value)} />
+                  value={fecha} onChange={e => { tocado.current.fecha = true; setFecha(e.target.value) }} />
                 <Input label="Referencia" placeholder="N.º de operación"
-                  value={referencia} onChange={e => setReferencia(e.target.value)} />
+                  value={referencia} onChange={e => { tocado.current.referencia = true; setReferencia(e.target.value) }} />
                 <Input label="Remitente" placeholder="Nombre de quien depositó"
-                  value={nombre} onChange={e => setNombre(e.target.value)} />
+                  value={nombre} onChange={e => { tocado.current.nombre = true; setNombre(e.target.value) }} />
               </div>
 
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
