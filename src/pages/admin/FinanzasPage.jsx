@@ -5,7 +5,8 @@ import { Card, StatCard, Btn, Input, Select, Alert, Spinner } from '../../compon
 import { fmtMoney, fmtFecha, METODO_LABEL } from '../../utils'
 
 const CATEGORIAS = ['nomina','arriendo','servicios','insumos','comision_bancaria','proveedor','marketing','otro']
-const BANCOS = ['produbanco','pichincha','efectivo','payphone']
+const BANCOS = ['produbanco','efectivo','payphone']
+// 'pichincha' se conserva solo para mostrar cobros históricos ya guardados con ese banco; la cuenta ya no existe y no se ofrece en ningún desplegable.
 const BANCO_LABEL = { produbanco:'Produbanco', pichincha:'Pichincha', efectivo:'Efectivo', payphone:'Payphone' }
 const LOCALES = [{ id:'', nombre:'Todos (Global)' }, { id:'1', nombre:'Villaflora' }, { id:'2', nombre:'Florida' }]
 
@@ -153,7 +154,7 @@ export default function FinanzasPage() {
           {/* Label de vista actual */}
           {esGlobal && (
             <div style={{ fontSize:'12px', color:'var(--gray-400)' }}>
-              Mostrando: <strong>{LOCALES.find(l => l.id === filtroLocal)?.nombre || 'Todos'}</strong> · {mes}
+              Mostrando: <strong>{LOCALES.find(l => l.id === filtroLocal)?.nombre || 'Todos'}</strong> · {vistaFecha === 'anio' ? anio : mes}
             </div>
           )}
 
