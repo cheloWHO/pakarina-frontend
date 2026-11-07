@@ -10,12 +10,10 @@ const SERVICIOS = [
   { id:1, nombre:'Clase Post Vacuna',  precio:12,  clases:1,  vigencia:0 },
   { id:2, nombre:'Evaluación',         precio:12,  clases:1,  vigencia:0 },
   { id:3, nombre:'Baby Spa',           precio:15,  clases:1,  vigencia:0 },
-  { id:4, nombre:'Plan Mensual #1',    precio:54,  clases:4,  vigencia:30 },
-  { id:5, nombre:'Plan Mensual #2',    precio:90,  clases:8,  vigencia:30 },
-  { id:6, nombre:'Plan Mensual #3',    precio:130, clases:12, vigencia:30 },
-  { id:7, nombre:'Plan Trimestral #4', precio:150, clases:12, vigencia:90 },
-  { id:8, nombre:'Plan Trimestral #5', precio:260, clases:24, vigencia:90 },
-  { id:9, nombre:'Plan Trimestral #6', precio:355, clases:36, vigencia:90 },
+  { id:4, nombre:'Plan 1', precio:60,  clases:4,  vigencia:30 },
+  { id:5, nombre:'Plan 2', precio:100, clases:8,  vigencia:30 },
+  { id:7, nombre:'Plan 3', precio:165, clases:12, vigencia:90 },
+  { id:8, nombre:'Plan 4', precio:270, clases:24, vigencia:90 },
 ]
 
 const BANCO_POR_METODO = {
