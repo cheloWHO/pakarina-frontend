@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { bebesAPI, planesAPI, gruposAPI, clasesAPI } from '../../api'
+import { bebesAPI, planesAPI, gruposAPI, clasesAPI, finanzasAPI } from '../../api'
 import { useAuth } from '../../context/AuthContext'
+import CuentaDestinoSelect from '../../components/CuentaDestinoSelect'
+import ComprobanteUploader from '../../components/ComprobanteUploader'
 import { Card, Btn, Input, Select, Badge, Spinner, Alert, Empty } from '../../components/ui'
 import { fmtFecha, edadMeses, METODO_LABEL, TIPO_CLASE_LABEL } from '../../utils'
 
@@ -30,6 +32,31 @@ const LOCALES = [
   { id: 2, nombre: 'Florida (Norte)' },
 ]
 
+// Métodos que llegan a una cuenta bancaria (los demás son efectivo o tarjeta)
+const METODO_CON_CUENTA = ['transferencia_prod', 'interbancaria']
+
+// Verificación SOLO LECTURA: compara los precios que muestra esta pantalla
+// con los reales del backend (tabla servicios, GET /api/finanzas/servicios).
+// Solo avisa en la consola del navegador si hay diferencia; NUNCA cambia
+// un precio. Si el backend aún no tiene el endpoint (rama sin fusionar),
+// falla en silencio y se verifica cuando se publique.
+async function verificarPrecios() {
+  try {
+    const { data } = await finanzasAPI.listarServicios()
+    const reales = new Map((data || []).map(s => [s.id, s]))
+    SERVICIOS.forEach(local => {
+      const real = reales.get(local.id)
+      if (!real) {
+        console.warn(`[Precios] El backend no trae el servicio id ${local.id} (${local.nombre})`)
+        return
+      }
+      if (parseFloat(real.precio) !== local.precio || real.num_clases !== local.clases || real.vigencia_dias !== local.vigencia) {
+        console.warn(`[Precios] Diferencia en "${local.nombre}": pantalla $${local.precio} / ${local.clases} clases / ${local.vigencia} días — backend $${real.precio} / ${real.num_clases} clases / ${real.vigencia_dias} días`)
+      }
+    })
+  } catch (e) { /* endpoint aún no publicado */ }
+}
+
 function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [bebe,        setBebe]        = useState({ ...bebeInicial })
   const [planes,      setPlanes]      = useState([])
@@ -53,6 +80,9 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [nuevoPlanRef,    setNuevoPlanRef]    = useState('')
   const [nuevoPlanFecha,  setNuevoPlanFecha]  = useState('')
   const [savingNuevoPlan, setSavingNuevoPlan] = useState(false)
+  const [nuevoPlanCuentaId, setNuevoPlanCuentaId] = useState(null)
+  const [ultimoPagoId, setUltimoPagoId] = useState(null)
+  const [comprobanteSubido, setComprobanteSubido] = useState(false)
 
   useEffect(() => {
     planesAPI.listar({ bebe_id: bebeInicial.id })
@@ -146,12 +176,13 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
     if (!nuevoPlanSrvId) return
     setSavingNuevoPlan(true); setMsg(null)
     try {
-      await planesAPI.registrarPago({
+      const res = await planesAPI.registrarPago({
         local_id:      bebe.local_id,
         bebe_id:       bebeInicial.id,
         servicio_id:   nuevoPlanSrvId,
         metodo_pago:   nuevoPlanMetodo,
         banco_destino: BANCO_POR_METODO[nuevoPlanMetodo],
+        cuenta_id:     nuevoPlanCuentaId || undefined,
         referencia:    nuevoPlanRef || null,
         fecha_inicio:  nuevoPlanFecha || null,
       })
@@ -159,7 +190,9 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       setPlanes(fresh.data)
       setShowNuevoPlan(false)
       setNuevoPlanSrvId(null); setNuevoPlanMetodo('efectivo')
-      setNuevoPlanRef(''); setNuevoPlanFecha('')
+      setNuevoPlanRef(''); setNuevoPlanFecha(''); setNuevoPlanCuentaId(null)
+      setUltimoPagoId(res.data?.pago_id || null)
+      setComprobanteSubido(false)
       setMsg({ type: 'ok', text: 'Plan registrado correctamente' })
     } catch (e) {
       setMsg({ type: 'error', text: e.response?.data?.error || 'Error al registrar plan' })
@@ -257,11 +290,20 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
               <Input label="Referencia (opcional)" value={nuevoPlanRef}
                 onChange={e => setNuevoPlanRef(e.target.value)} placeholder="TRF-001" />
             </div>
+            {METODO_CON_CUENTA.includes(nuevoPlanMetodo) && (
+              <div style={{ marginBottom:'12px' }}>
+                <CuentaDestinoSelect value={nuevoPlanCuentaId} onChange={setNuevoPlanCuentaId} />
+              </div>
+            )}
             <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
               <Btn variant="ghost" onClick={() => setShowNuevoPlan(false)}>Cancelar</Btn>
               <Btn onClick={handleNuevoPlan} loading={savingNuevoPlan} disabled={!nuevoPlanSrvId}>Registrar plan</Btn>
             </div>
           </div>
+        )}
+
+        {ultimoPagoId && !comprobanteSubido && (
+          <ComprobanteUploader pagoId={ultimoPagoId} onSubido={() => setComprobanteSubido(true)} />
         )}
 
         {planes.length === 0 ? (
@@ -415,6 +457,9 @@ export default function BebesPage() {
   const [metodo,      setMetodo]      = useState('efectivo')
   const [ref,         setRef]         = useState('')
   const [fechaInicio, setFechaInicio] = useState('')
+  const [cuentaId,    setCuentaId]    = useState(null)
+  const [pagoIdCreado, setPagoIdCreado] = useState(null)
+  const [comprobanteSubido, setComprobanteSubido] = useState(false)
 
   async function loadBebes() {
     try {
@@ -428,7 +473,7 @@ export default function BebesPage() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { loadBebes() }, [localId])
+  useEffect(() => { loadBebes(); verificarPrecios() }, [localId])
 
   const srv      = SERVICIOS.find(s => s.id === srvId)
   const comision = metodo === 'tarjeta' && srv ? parseFloat((srv.precio * 0.06).toFixed(2)) : 0
@@ -442,11 +487,14 @@ export default function BebesPage() {
         ...bebe, local_id: localIdFinal, grupo_id: bebe.grupo_id || null,
       })
       const bebeId = bRes.data.bebe_id
-      await planesAPI.registrarPago({
+      const pRes = await planesAPI.registrarPago({
         local_id: localIdFinal, bebe_id: bebeId, servicio_id: srvId,
         metodo_pago: metodo, banco_destino: BANCO_POR_METODO[metodo],
+        cuenta_id: cuentaId || undefined,
         referencia: ref || null, fecha_inicio: fechaInicio || null,
       })
+      setPagoIdCreado(pRes.data?.pago_id || null)
+      setComprobanteSubido(false)
       setSuccess({
         email: bRes.data.credenciales.email, password: bRes.data.credenciales.password,
         nombre: bebe.nombre_completo, servicio: srv.nombre,
@@ -460,6 +508,7 @@ export default function BebesPage() {
   function resetForm() {
     setBebe({ nombre_completo:'', fecha_nacimiento:'', grupo_id:'', email_representante:'', whatsapp_representante:'', nombre_tutor:'', local_id_form: localId || '' })
     setSrvId(null); setMetodo('efectivo'); setRef(''); setFechaInicio(''); setPaso(0)
+    setCuentaId(null); setPagoIdCreado(null); setComprobanteSubido(false)
     setSuccess(null); setFormErr(''); setShowForm(false)
   }
 
@@ -516,6 +565,11 @@ export default function BebesPage() {
                 <div style={{ fontSize:'13px' }}>Usuario: <strong>{success.email}</strong></div>
                 <div style={{ fontSize:'13px' }}>Contraseña: <strong>{success.password}</strong></div>
               </div>
+              {pagoIdCreado && !comprobanteSubido && (
+                <div style={{ textAlign:'left', marginBottom:'1rem' }}>
+                  <ComprobanteUploader pagoId={pagoIdCreado} onSubido={() => setComprobanteSubido(true)} />
+                </div>
+              )}
               <Btn onClick={resetForm} variant="secondary">Registrar otro</Btn>
             </div>
           ) : (
@@ -622,6 +676,9 @@ export default function BebesPage() {
                   </div>
                   <Input label="Fecha de inicio del plan (opcional — por defecto hoy)" type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} />
                   <Input label="Referencia de pago (opcional)" placeholder="TRF-001" value={ref} onChange={e => setRef(e.target.value)} />
+                  {METODO_CON_CUENTA.includes(metodo) && (
+                    <CuentaDestinoSelect value={cuentaId} onChange={setCuentaId} />
+                  )}
                   <div style={{ display:'flex', justifyContent:'space-between' }}>
                     <Btn variant="ghost" onClick={() => setPaso(1)}>← Atrás</Btn>
                     <Btn onClick={() => setPaso(3)}>Revisar →</Btn>
