@@ -189,8 +189,8 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const srvNuevo = SERVICIOS.find(s => s.id === nuevoPlanSrvId)
   const esParcialNuevo = !!(srvNuevo && SERVICIOS_PARCIALES.includes(srvNuevo.id))
   const montoNuevoNum = parseFloat(nuevoPlanMonto)
-  const saldoNuevo = esParcialNuevo && !Number.isNaN(montoNuevoNum)
-    ? Math.max(0, parseFloat((srvNuevo.precio - montoNuevoNum).toFixed(2)))
+  const saldoNuevo = esParcialNuevo
+    ? Math.max(0, parseFloat((srvNuevo.precio - (Number.isNaN(montoNuevoNum) ? 0 : montoNuevoNum)).toFixed(2)))
     : null
 
   function elegirServicioNuevoPlan(s) {
@@ -620,7 +620,7 @@ export default function BebesPage() {
   // ahora es la mitad por defecto y el resto queda pendiente del plan.
   const esParcialWizard = !!(srv && SERVICIOS_PARCIALES.includes(srv.id))
   const montoInicialNum = parseFloat(montoInicial)
-  const montoACobrar = esParcialWizard && !Number.isNaN(montoInicialNum) ? montoInicialNum : (srv ? srv.precio : 0)
+  const montoACobrar = esParcialWizard ? (Number.isNaN(montoInicialNum) ? 0 : montoInicialNum) : (srv ? srv.precio : 0)
   const saldoWizard = esParcialWizard && srv ? Math.max(0, parseFloat((srv.precio - montoACobrar).toFixed(2))) : 0
   const comision = metodo === 'tarjeta' && srv ? parseFloat((montoACobrar * 0.06).toFixed(2)) : 0
   const neto     = srv ? parseFloat((montoACobrar - comision).toFixed(2)) : 0
