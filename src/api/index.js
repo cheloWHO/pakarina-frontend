@@ -33,6 +33,16 @@ export const finanzasAPI = {
   resumen:        (params) => api.get('/api/finanzas/resumen', { params }),
   listarGastos:   (params) => api.get('/api/finanzas/gastos',  { params }),
   registrarGasto: (data)   => api.post('/api/finanzas/gastos', data),
+  // Cuentas bancarias (solo números enmascarados) y precios reales.
+  // Viven en la rama fix/comprobantes-cuentas del backend: hasta que se
+  // fusione, estas llamadas devuelven 404 y el frontend sigue con su
+  // comportamiento actual (ver CuentaDestinoSelect y verificarPrecios).
+  listarCuentas:   ()         => api.get('/api/finanzas/cuentas'),
+  listarServicios: ()         => api.get('/api/finanzas/servicios'),
+  subirComprobante:(formData) => api.post('/api/finanzas/comprobantes', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 30000,
+  }),
 }
 // SERVICIOS (catálogo)
 export const serviciosAPI = {
