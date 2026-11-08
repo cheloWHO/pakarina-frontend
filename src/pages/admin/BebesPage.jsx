@@ -90,6 +90,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   // blanco al abrirse (ReferenceError, 2026-11-07).
   const [savingNuevoPlan, setSavingNuevoPlan] = useState(false)
   const [nuevoPlanCuentaId, setNuevoPlanCuentaId] = useState(null)
+  const [fechaNacExactaPlan, setFechaNacExactaPlan] = useState('')
   const [ultimoPagoId, setUltimoPagoId] = useState(null)
   const [comprobanteSubido, setComprobanteSubido] = useState(false)
   // Pago restante (segunda mitad de Evaluación / Post Vacuna)
@@ -250,6 +251,12 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
 
   async function handleNuevoPlan() {
     if (!nuevoPlanSrvId) return
+    // Plan sin fecha exacta: el bebé se registró solo con la edad en
+    // meses y para tomar un plan hay que ingresar la fecha exacta.
+    if (bebe.fecha_nacimiento_aprox && !fechaNacExactaPlan) {
+      setMsg({ type: 'error', text: 'Para tomar un plan ingresa la fecha de nacimiento exacta del bebé.' })
+      return
+    }
     if (esParcialNuevo) {
       const m = parseFloat(nuevoPlanMonto)
       if (Number.isNaN(m) || m <= 0 || m > srvNuevo.precio) {
@@ -268,6 +275,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
         cuenta_id:     nuevoPlanCuentaId || undefined,
         referencia:    nuevoPlanRef || null,
         fecha_inicio:  nuevoPlanFecha || null,
+        fecha_nacimiento: bebe.fecha_nacimiento_aprox ? (fechaNacExactaPlan || undefined) : undefined,
         monto_inicial: esParcialNuevo && nuevoPlanMonto !== '' ? parseFloat(nuevoPlanMonto) : undefined,
       })
       const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
@@ -276,6 +284,8 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       setNuevoPlanSrvId(null); setNuevoPlanMetodo('efectivo')
       setNuevoPlanRef(''); setNuevoPlanFecha(''); setNuevoPlanCuentaId(null)
       setNuevoPlanMonto('')
+      if (bebe.fecha_nacimiento_aprox && fechaNacExactaPlan) setBebe(b => ({...b, fecha_nacimiento: fechaNacExactaPlan, fecha_nacimiento_aprox: 0}))
+      setFechaNacExactaPlan('')
       setUltimoPagoId(res.data?.pago_id || null)
       setComprobanteSubido(false)
       setMsg({ type: 'ok', text: 'Plan registrado correctamente' })
@@ -314,6 +324,11 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
               <Badge color="green">{edadMeses(bebe.fecha_nacimiento)}</Badge>
             </div>
           </div>
+          {bebe.fecha_nacimiento_aprox ? (
+            <div style={{ gridColumn:'1/-1', fontSize:'11px', color:'var(--warn)' }}>
+              Fecha aproximada (solo se conoce la edad en meses). Al tomar un plan se pedirá la fecha exacta.
+            </div>
+          ) : null}
           <Input label="Nombre del tutor/a" value={bebe.nombre_tutor}
             onChange={e => setBebe(b => ({...b, nombre_tutor: e.target.value}))} />
           <Input label="WhatsApp" value={bebe.whatsapp_representante}
@@ -393,6 +408,13 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 <CuentaDestinoSelect value={nuevoPlanCuentaId} onChange={setNuevoPlanCuentaId} />
               </div>
             )}
+            {bebe.fecha_nacimiento_aprox ? (
+              <div style={{ background:'var(--warn-light)', border:'1px solid var(--warn)', borderRadius:'var(--radius-sm)', padding:'10px', marginBottom:'12px' }}>
+                <div style={{ fontSize:'12px', fontWeight:600, color:'var(--warn)', marginBottom:'6px' }}>Este bebé no tiene fecha de nacimiento exacta (se registró solo con la edad en meses). Para tomar un plan hay que ingresarla.</div>
+                <Input label="Fecha de nacimiento exacta" type="date" value={fechaNacExactaPlan}
+                  onChange={e => setFechaNacExactaPlan(e.target.value)} required />
+              </div>
+            ) : null}
             <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
               <Btn variant="ghost" onClick={() => setShowNuevoPlan(false)}>Cancelar</Btn>
               <Btn onClick={handleNuevoPlan} loading={savingNuevoPlan} disabled={!nuevoPlanSrvId}>Registrar plan</Btn>
@@ -593,7 +615,7 @@ export default function BebesPage() {
   const [formErr,     setFormErr]     = useState('')
 
   const [bebe, setBebe] = useState({
-    nombre_completo:'', fecha_nacimiento:'', grupo_id:'',
+    nombre_completo:'', fecha_nacimiento:'', edad_meses:'', grupo_id:'',
     email_representante:'', whatsapp_representante:'', nombre_tutor:'',
     local_id_form: localId || '',
   })
@@ -610,6 +632,10 @@ export default function BebesPage() {
   const [edadAviso, setEdadAviso] = useState(null)
   const [dupVerificando, setDupVerificando] = useState(false)
   const [forzarDuplicado, setForzarDuplicado] = useState(false)
+  // Solo edad en meses (Evaluación / Post Vacuna no preguntan la fecha
+  // exacta) y fecha exacta pedida al tomar un plan.
+  const [soloMeses, setSoloMeses] = useState(false)
+  const [fechaNacExacta, setFechaNacExacta] = useState('')
   const [gruposDuplicados, setGruposDuplicados] = useState([])
   const dupSeq = useRef(0)
 
@@ -659,7 +685,7 @@ export default function BebesPage() {
     const seq = ++dupSeq.current
     const t = setTimeout(async () => {
       try {
-        const { data } = await bebesAPI.verificarDuplicados(nombre, bebe.fecha_nacimiento || undefined, bebe.email_representante || undefined, bebe.whatsapp_representante || undefined)
+        const { data } = await bebesAPI.verificarDuplicados(nombre, soloMeses ? undefined : (bebe.fecha_nacimiento || undefined), bebe.email_representante || undefined, bebe.whatsapp_representante || undefined, soloMeses ? (bebe.edad_meses || undefined) : undefined)
         if (seq !== dupSeq.current) return
         setDupAviso((data?.duplicados || []).length ? data.duplicados : null)
         setEdadAviso(data?.advertencia_edad || null)
@@ -667,7 +693,7 @@ export default function BebesPage() {
       finally { if (seq === dupSeq.current) setDupVerificando(false) }
     }, 500)
     return () => clearTimeout(t)
-  }, [bebe.nombre_completo, bebe.fecha_nacimiento, bebe.email_representante, bebe.whatsapp_representante, showForm, paso, success, forzarDuplicado])
+  }, [bebe.nombre_completo, bebe.fecha_nacimiento, bebe.edad_meses, soloMeses, bebe.email_representante, bebe.whatsapp_representante, showForm, paso, success, forzarDuplicado])
 
   const srv      = SERVICIOS.find(s => s.id === srvId)
   // Pago en dos partes (solo Evaluación y Post Vacuna): el monto a cobrar
@@ -679,6 +705,10 @@ export default function BebesPage() {
   const comision = metodo === 'tarjeta' && srv ? parseFloat((montoACobrar * 0.06).toFixed(2)) : 0
   const neto     = srv ? parseFloat((montoACobrar - comision).toFixed(2)) : 0
   const localIdFinal = esGlobal ? parseInt(bebe.local_id_form) : localId
+  // Un plan exige la fecha de nacimiento exacta: si el bebé se registró
+  // solo con la edad en meses, aquí se pide antes de seguir.
+  const esPlanWizard = !!(srv && srv.vigencia > 0)
+  const faltaFechaExactaPlan = esPlanWizard && soloMeses && !fechaNacExacta
 
   function elegirServicioWizard(s) {
     setSrvId(s.id)
@@ -705,6 +735,7 @@ export default function BebesPage() {
         metodo_pago: metodo, banco_destino: BANCO_POR_METODO[metodo],
         cuenta_id: cuentaId || undefined,
         referencia: ref || null, fecha_inicio: fechaInicio || null,
+        fecha_nacimiento: (esPlanWizard && soloMeses) ? fechaNacExacta : undefined,
         monto_inicial: esParcialWizard && montoInicial !== '' ? parseFloat(montoInicial) : undefined,
       })
       setPagoIdCreado(pRes.data?.pago_id || null)
@@ -732,16 +763,28 @@ export default function BebesPage() {
   }
 
   function resetForm() {
-    setBebe({ nombre_completo:'', fecha_nacimiento:'', grupo_id:'', email_representante:'', whatsapp_representante:'', nombre_tutor:'', local_id_form: localId || '' })
+    setBebe({ nombre_completo:'', fecha_nacimiento:'', edad_meses:'', grupo_id:'', email_representante:'', whatsapp_representante:'', nombre_tutor:'', local_id_form: localId || '' })
     setSrvId(null); setMetodo('efectivo'); setRef(''); setFechaInicio(''); setPaso(0)
     setCuentaId(null); setMontoInicial(''); setPagoIdCreado(null); setComprobanteSubido(false)
     setSuccess(null); setFormErr(''); setShowForm(false)
     setDupAviso(null); setEdadAviso(null); setForzarDuplicado(false)
+    setSoloMeses(false); setFechaNacExacta('')
   }
 
-  const paso0Valido = bebe.nombre_completo && bebe.fecha_nacimiento &&
+  // Edad en meses válida: entero entre 0 y 36.
+  const edadMesesNum = parseInt(bebe.edad_meses, 10)
+  const edadMesesValida = soloMeses && bebe.edad_meses !== '' && !Number.isNaN(edadMesesNum) && edadMesesNum >= 0 && edadMesesNum <= 36
+  const paso0Valido = bebe.nombre_completo && (bebe.fecha_nacimiento || edadMesesValida) &&
     bebe.nombre_tutor && bebe.whatsapp_representante && bebe.email_representante &&
     (!esGlobal || bebe.local_id_form)
+
+  // Cambiar entre fecha exacta y solo edad en meses: al cambiar se
+  // limpia el otro dato para no enviar los dos.
+  function cambiarSoloMeses(v) {
+    setSoloMeses(v)
+    if (v) setBebe(b => ({...b, fecha_nacimiento: ''}))
+    else setBebe(b => ({...b, edad_meses: ''}))
+  }
 
   // Búsqueda por nombre: insensible a mayúsculas y tildes, combinada
   // con el filtro de sede.
@@ -867,14 +910,28 @@ export default function BebesPage() {
                         </Btn>
                       </div>
                     )}
-                    <Input label="Fecha de nacimiento" type="date" value={bebe.fecha_nacimiento}
-                      onChange={e => setBebe(b => ({...b, fecha_nacimiento: e.target.value}))} required />
+                    {soloMeses ? (
+                      <Input label="Edad (meses)" type="number" min="0" max="36" value={bebe.edad_meses}
+                        onChange={e => setBebe(b => ({...b, edad_meses: e.target.value}))} placeholder="Ej. 2" required />
+                    ) : (
+                      <Input label="Fecha de nacimiento" type="date" value={bebe.fecha_nacimiento}
+                        onChange={e => setBebe(b => ({...b, fecha_nacimiento: e.target.value}))} required />
+                    )}
                     <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
                       <label style={{ fontSize:'12px', color:'var(--gray-600)', fontWeight:500 }}>Edad</label>
                       <div style={{ height:'38px', display:'flex', alignItems:'center' }}>
-                        <Badge color="green">{edadMeses(bebe.fecha_nacimiento)}</Badge> : <span style={{ color:'var(--gray-400)', fontSize:'13px' }}>— meses</span>
+                        <Badge color="green">{soloMeses ? (edadMesesValida ? `${edadMesesNum} meses` : '—') : edadMeses(bebe.fecha_nacimiento)}</Badge> : <span style={{ color:'var(--gray-400)', fontSize:'13px' }}>— meses</span>
                       </div>
                     </div>
+                    <label style={{ gridColumn:'1/-1', display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', color:'var(--gray-600)', cursor:'pointer' }}>
+                      <input type="checkbox" checked={soloMeses} onChange={e => cambiarSoloMeses(e.target.checked)} />
+                      Solo sé la edad en meses
+                    </label>
+                    {soloMeses && (
+                      <div style={{ gridColumn:'1/-1', fontSize:'12px', color:'var(--gray-400)' }}>
+                        Para Evaluación y Post Vacuna no hace falta la fecha exacta. Al tomar un plan te pediremos la fecha de nacimiento.
+                      </div>
+                    )}
                     {esGlobal && (
                       <div style={{ gridColumn:'1/-1' }}>
                         <Select label="Sucursal *" value={bebe.local_id_form}
@@ -922,12 +979,19 @@ export default function BebesPage() {
                       </div>
                     ))}
                   </div>
+                  {esPlanWizard && soloMeses && (
+                    <div style={{ background:'var(--warn-light)', border:'1px solid var(--warn)', borderRadius:'var(--radius-sm)', padding:'12px' }}>
+                      <div style={{ fontSize:'12px', fontWeight:600, color:'var(--warn)', marginBottom:'6px' }}>Para tomar un plan necesitamos la fecha de nacimiento exacta</div>
+                      <Input label="Fecha de nacimiento exacta" type="date" value={fechaNacExacta}
+                        onChange={e => setFechaNacExacta(e.target.value)} required />
+                    </div>
+                  )}
                   <div style={{ display:'flex', justifyContent:'space-between' }}>
                     <div style={{ display:'flex', gap:'8px' }}>
                       <Btn variant="ghost" onClick={() => setPaso(0)}>← Atrás</Btn>
                       <Btn variant="ghost" onClick={resetForm}>Cancelar</Btn>
                     </div>
-                    <Btn onClick={() => setPaso(2)} disabled={!srvId}>Siguiente →</Btn>
+                    <Btn onClick={() => setPaso(2)} disabled={!srvId || faltaFechaExactaPlan}>Siguiente →</Btn>
                   </div>
                 </div>
               )}
@@ -993,6 +1057,8 @@ export default function BebesPage() {
                   <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px', display:'flex', flexDirection:'column', gap:'6px' }}>
                     {[
                       ['Bebé',        bebe.nombre_completo],
+                      ['Nacimiento',  soloMeses ? `${bebe.edad_meses} meses (aprox.)` : fmtFecha(bebe.fecha_nacimiento)],
+                      ...(soloMeses && srv?.vigencia > 0 ? [['Fecha exacta (plan)', fmtFecha(fechaNacExacta)]] : []),
                       ['Tutor/a',     bebe.nombre_tutor],
                       ['WhatsApp',    bebe.whatsapp_representante],
                       ['Sucursal',    esGlobal ? LOCALES.find(l => l.id === parseInt(bebe.local_id_form))?.nombre : (localId === 1 ? 'Villaflora' : 'Florida')],
