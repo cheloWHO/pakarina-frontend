@@ -11,14 +11,16 @@ import { useCuentas } from '../hooks/useCuentas'
 // ya no es silencioso: mientras carga se ve "Cargando cuentas…" y si
 // falla se avisa con un texto discreto, para que no parezca que el campo
 // no existe.
-export default function CuentaDestinoSelect({ value, onChange }) {
+// tipoPorDefecto: qué cuenta se preselecciona ('clases' en planes,
+// 'productos' en ventas de inventario).
+export default function CuentaDestinoSelect({ value, onChange, tipoPorDefecto = 'clases' }) {
   const { cuentas, cargando, error } = useCuentas()
 
-  // Preseleccionar la cuenta de Clases cuando aparece por primera vez
+  // Preseleccionar la cuenta preferida cuando aparece por primera vez
   useEffect(() => {
     if (!value && cuentas.length) {
-      const clases = cuentas.find(c => c.tipo === 'clases') || cuentas[0]
-      onChange(clases.id)
+      const preferida = cuentas.find(c => c.tipo === tipoPorDefecto) || cuentas[0]
+      onChange(preferida.id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cuentas])
