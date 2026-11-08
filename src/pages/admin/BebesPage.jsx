@@ -85,6 +85,10 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [nuevoPlanRef,    setNuevoPlanRef]    = useState('')
   const [nuevoPlanFecha,  setNuevoPlanFecha]  = useState('')
   const [nuevoPlanMonto,  setNuevoPlanMonto]  = useState('')
+  // NOTA: no borrar esta línea: el botón "Registrar plan" la usa
+  // (loading={savingNuevoPlan}). Sin ella el formulario deja la app en
+  // blanco al abrirse (ReferenceError, 2026-11-07).
+  const [savingNuevoPlan, setSavingNuevoPlan] = useState(false)
   const [nuevoPlanCuentaId, setNuevoPlanCuentaId] = useState(null)
   const [ultimoPagoId, setUltimoPagoId] = useState(null)
   const [comprobanteSubido, setComprobanteSubido] = useState(false)
@@ -578,6 +582,7 @@ export default function BebesPage() {
 
   const [bebes,       setBebes]       = useState([])
   const [filtroLocal, setFiltroLocal] = useState('')
+  const [busquedaNombre, setBusquedaNombre] = useState('')
   const [grupos,      setGrupos]      = useState([])
   const [loading,     setLoading]     = useState(true)
   const [showForm,    setShowForm]    = useState(false)
@@ -675,9 +680,14 @@ export default function BebesPage() {
     bebe.nombre_tutor && bebe.whatsapp_representante && bebe.email_representante &&
     (!esGlobal || bebe.local_id_form)
 
-  const bebesFiltrados = filtroLocal
-    ? bebes.filter(b => b.local_id === parseInt(filtroLocal))
-    : bebes
+  // Búsqueda por nombre: insensible a mayúsculas y tildes, combinada
+  // con el filtro de sede.
+  const sinTildes = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const bebesFiltrados = bebes.filter(b => {
+    const porLocal = !filtroLocal || b.local_id === parseInt(filtroLocal)
+    const porNombre = !busquedaNombre.trim() || sinTildes(b.nombre_completo).includes(sinTildes(busquedaNombre.trim()))
+    return porLocal && porNombre
+  })
 
   if (loading) return <Spinner />
 
@@ -700,6 +710,12 @@ export default function BebesPage() {
           <p style={{ color:'var(--gray-400)', fontSize:'13px' }}>{bebesFiltrados.length} registrados</p>
         </div>
         <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+          <input
+            value={busquedaNombre}
+            onChange={e => setBusquedaNombre(e.target.value)}
+            placeholder="Buscar por nombre…"
+            style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px', width:'190px' }}
+          />
           {esGlobal && (
             <select value={filtroLocal} onChange={e => setFiltroLocal(e.target.value)}
               style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px' }}>

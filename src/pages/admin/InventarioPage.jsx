@@ -5,12 +5,16 @@ import { useAuth } from '../../context/AuthContext'
 import { Card, Btn, Input, Select, Badge, Spinner, Alert, Empty } from '../../components/ui'
 import { fmtMoney, fmtFecha, METODO_LABEL } from '../../utils'
 import * as XLSX from 'xlsx'
+import CuentaDestinoSelect from '../../components/CuentaDestinoSelect'
 
 const UBICACIONES = ['bodega', 'villaflora', 'florida']
 const UBICACION_LABEL = { bodega:'Bodega central', villaflora:'Villaflora', florida:'Florida' }
 
+// Métodos que llegan a una cuenta bancaria (los demás son efectivo o tarjeta)
+const METODO_CON_CUENTA = ['transferencia_prod', 'interbancaria']
+
 const VENTA_INICIAL = {
-  producto_id:'', cantidad:'1', metodo_pago:'efectivo',
+  producto_id:'', cantidad:'1', metodo_pago:'efectivo', cuenta_id:null,
   local_id:'', tipo_cliente:'bebe',
   bebe_id:'',
   cliente_nombre:'', cliente_telefono:'', cliente_email:'', cliente_cedula:'',
@@ -257,6 +261,9 @@ export default function InventarioPage() {
         producto_id:      parseInt(venta.producto_id),
         cantidad:         parseInt(venta.cantidad),
         metodo_pago:      venta.metodo_pago,
+        // La cuenta destino solo aplica a transferencias; en efectivo o
+        // tarjeta no se guarda cuenta.
+        cuenta_id:        METODO_CON_CUENTA.includes(venta.metodo_pago) ? (venta.cuenta_id || undefined) : undefined,
         descuento:        parseFloat(venta.descuento || 0),
         bebe_id:          venta.tipo_cliente === 'bebe' && venta.bebe_id ? parseInt(venta.bebe_id) : null,
         cliente_nombre:   venta.tipo_cliente === 'externo' ? venta.cliente_nombre   : null,
@@ -507,6 +514,14 @@ export default function InventarioPage() {
                 onChange={e => setVenta(v => ({...v, metodo_pago: e.target.value}))}>
                 {Object.entries(METODO_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </Select>
+              {METODO_CON_CUENTA.includes(venta.metodo_pago) && (
+                <div style={{ gridColumn:'1/-1' }}>
+                  <CuentaDestinoSelect
+                    value={venta.cuenta_id}
+                    onChange={v => setVenta(vv => ({ ...vv, cuenta_id: v }))}
+                    tipoPorDefecto="productos" />
+                </div>
+              )}
               {esGlobal && (
                 <Select label="Vender desde" required value={venta.local_id}
                   onChange={e => setVenta(v => ({...v, local_id: e.target.value}))}>
