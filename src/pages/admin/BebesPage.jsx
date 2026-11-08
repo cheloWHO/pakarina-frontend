@@ -903,7 +903,8 @@ export default function BebesPage() {
                         onChange={e => setBebe(b => ({...b, email_representante: e.target.value}))} placeholder="mama@email.com" required />
                     </div>
                   </div>
-                  <div style={{ display:'flex', justifyContent:'flex-end' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between' }}>
+                    <Btn variant="ghost" onClick={resetForm}>Cancelar</Btn>
                     <Btn onClick={() => setPaso(1)} disabled={!paso0Valido}>Siguiente →</Btn>
                   </div>
                 </div>
@@ -922,7 +923,10 @@ export default function BebesPage() {
                     ))}
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between' }}>
-                    <Btn variant="ghost" onClick={() => setPaso(0)}>← Atrás</Btn>
+                    <div style={{ display:'flex', gap:'8px' }}>
+                      <Btn variant="ghost" onClick={() => setPaso(0)}>← Atrás</Btn>
+                      <Btn variant="ghost" onClick={resetForm}>Cancelar</Btn>
+                    </div>
                     <Btn onClick={() => setPaso(2)} disabled={!srvId}>Siguiente →</Btn>
                   </div>
                 </div>
@@ -975,7 +979,10 @@ export default function BebesPage() {
                     <CuentaDestinoSelect value={cuentaId} onChange={setCuentaId} />
                   )}
                   <div style={{ display:'flex', justifyContent:'space-between' }}>
-                    <Btn variant="ghost" onClick={() => setPaso(1)}>← Atrás</Btn>
+                    <div style={{ display:'flex', gap:'8px' }}>
+                      <Btn variant="ghost" onClick={() => setPaso(1)}>← Atrás</Btn>
+                      <Btn variant="ghost" onClick={resetForm}>Cancelar</Btn>
+                    </div>
                     <Btn onClick={() => setPaso(3)}>Revisar →</Btn>
                   </div>
                 </div>
@@ -1005,7 +1012,10 @@ export default function BebesPage() {
                   </div>
                   {formErr && <Alert type="error">{formErr}</Alert>}
                   <div style={{ display:'flex', justifyContent:'space-between' }}>
-                    <Btn variant="ghost" onClick={() => setPaso(2)}>← Atrás</Btn>
+                    <div style={{ display:'flex', gap:'8px' }}>
+                      <Btn variant="ghost" onClick={() => setPaso(2)}>← Atrás</Btn>
+                      <Btn variant="ghost" onClick={resetForm} disabled={saving}>Cancelar</Btn>
+                    </div>
                     <Btn onClick={handleRegistrar} loading={saving}>Registrar y generar plan</Btn>
                   </div>
                 </div>
