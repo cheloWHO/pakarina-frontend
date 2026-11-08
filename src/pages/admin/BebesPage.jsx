@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { bebesAPI, planesAPI, gruposAPI, clasesAPI, finanzasAPI } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import CuentaDestinoSelect from '../../components/CuentaDestinoSelect'
@@ -600,6 +600,12 @@ export default function BebesPage() {
   const [montoInicial, setMontoInicial] = useState('')
   const [pagoIdCreado, setPagoIdCreado] = useState(null)
   const [comprobanteSubido, setComprobanteSubido] = useState(false)
+  // Aviso de duplicados al registrar (nombre normalizado, todas las sedes).
+  const [dupAviso, setDupAviso] = useState(null)
+  const [dupVerificando, setDupVerificando] = useState(false)
+  const [forzarDuplicado, setForzarDuplicado] = useState(false)
+  const [gruposDuplicados, setGruposDuplicados] = useState([])
+  const dupSeq = useRef(0)
 
   async function loadBebes() {
     try {
@@ -611,9 +617,45 @@ export default function BebesPage() {
       setGrupos(gRes.data)
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
+    // Grupos de posibles duplicados (revisión del admin). Si el servidor
+    // aún no tiene el endpoint, se ignora y se muestra cuando se publique.
+    try {
+      const dRes = await bebesAPI.listarDuplicados()
+      setGruposDuplicados(dRes.data?.grupos || [])
+    } catch (e) { /* endpoint aún no publicado */ }
+  }
+
+  // Abre el detalle de un bebé existente (desde un aviso de duplicado).
+  async function abrirBebe(id) {
+    try {
+      const { data } = await bebesAPI.obtener(id)
+      setDupAviso(null)
+      setShowForm(false)
+      setBebeDetalle(data)
+    } catch (e) { console.error(e) }
   }
 
   useEffect(() => { loadBebes(); verificarPrecios() }, [localId])
+
+  // Aviso de duplicados mientras se escribe el nombre (pausa de 500 ms).
+  // Se consulta al servidor porque el listado de esta pantalla solo trae
+  // la sucursal del usuario y el duplicado puede estar en la otra sede.
+  useEffect(() => {
+    if (!showForm || success || paso !== 0) return
+    const nombre = (bebe.nombre_completo || '').trim()
+    if (nombre.length < 3 || forzarDuplicado) { setDupAviso(null); return }
+    setDupVerificando(true)
+    const seq = ++dupSeq.current
+    const t = setTimeout(async () => {
+      try {
+        const { data } = await bebesAPI.verificarDuplicados(nombre, bebe.fecha_nacimiento || undefined)
+        if (seq !== dupSeq.current) return
+        setDupAviso((data?.duplicados || []).length ? data.duplicados : null)
+      } catch (e) { /* el servidor aún no tiene el endpoint: sin aviso */ }
+      finally { if (seq === dupSeq.current) setDupVerificando(false) }
+    }, 500)
+    return () => clearTimeout(t)
+  }, [bebe.nombre_completo, bebe.fecha_nacimiento, showForm, paso, success, forzarDuplicado])
 
   const srv      = SERVICIOS.find(s => s.id === srvId)
   // Pago en dos partes (solo Evaluación y Post Vacuna): el monto a cobrar
@@ -643,6 +685,7 @@ export default function BebesPage() {
     try {
       const bRes = await bebesAPI.crear({
         ...bebe, local_id: localIdFinal, grupo_id: bebe.grupo_id || null,
+        forzar: forzarDuplicado || undefined,
       })
       const bebeId = bRes.data.bebe_id
       const pRes = await planesAPI.registrarPago({
@@ -660,7 +703,16 @@ export default function BebesPage() {
       })
       loadBebes()
     } catch (e) {
-      setFormErr(e.response?.data?.error || 'Error al registrar')
+      const dups = e.response?.data?.duplicados
+      if (e.response?.status === 409 && dups?.length) {
+        // El servidor detectó un posible duplicado: volver al paso del
+        // bebé y mostrar el aviso con la opción de registrar de todos modos.
+        setDupAviso(dups)
+        setForzarDuplicado(false)
+        setPaso(0)
+      } else {
+        setFormErr(e.response?.data?.error || 'Error al registrar')
+      }
     } finally { setSaving(false) }
   }
 
@@ -669,6 +721,7 @@ export default function BebesPage() {
     setSrvId(null); setMetodo('efectivo'); setRef(''); setFechaInicio(''); setPaso(0)
     setCuentaId(null); setMontoInicial(''); setPagoIdCreado(null); setComprobanteSubido(false)
     setSuccess(null); setFormErr(''); setShowForm(false)
+    setDupAviso(null); setForzarDuplicado(false)
   }
 
   const paso0Valido = bebe.nombre_completo && bebe.fecha_nacimiento &&
@@ -749,6 +802,37 @@ export default function BebesPage() {
                       <Input label="Nombre completo del bebé" value={bebe.nombre_completo}
                         onChange={e => setBebe(b => ({...b, nombre_completo: e.target.value}))} placeholder="Valentina Juárez" required />
                     </div>
+                    {dupVerificando && (
+                      <div style={{ gridColumn:'1/-1', fontSize:'12px', color:'var(--gray-400)' }}>
+                        Buscando bebés con un nombre parecido…
+                      </div>
+                    )}
+                    {dupAviso && (
+                      <div style={{ gridColumn:'1/-1', background:'var(--warn-light)', border:'1px solid var(--warn)', borderRadius:'var(--radius-sm)', padding:'12px' }}>
+                        <div style={{ fontWeight:600, fontSize:'13px', color:'var(--warn)', marginBottom:'6px' }}>
+                          ⚠️ Ya existe un bebé parecido
+                        </div>
+                        <div style={{ fontSize:'12px', color:'var(--gray-600)', marginBottom:'8px' }}>
+                          Revisa si es el mismo bebé antes de registrarlo de nuevo:
+                        </div>
+                        {dupAviso.map(d => (
+                          <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:'8px', background:'#fff', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'8px 10px', marginBottom:'6px' }}>
+                            <div style={{ fontSize:'12px' }}>
+                              <strong>{d.nombre_completo}</strong>
+                              <span style={{ color:'var(--gray-400)' }}> · Nacido: {fmtFecha(d.fecha_nacimiento)} · {d.local_id === 1 ? 'Villaflora' : 'Florida'}</span>
+                              {d.misma_fecha && <span style={{ color:'var(--warn)', fontWeight:600 }}> · Misma fecha de nacimiento</span>}
+                            </div>
+                            <Btn size="sm" variant="ghost" onClick={() => abrirBebe(d.id)}>Ver bebé</Btn>
+                          </div>
+                        ))}
+                        <div style={{ fontSize:'12px', color:'var(--gray-600)', marginBottom:'8px' }}>
+                          Si es otro bebé con el mismo nombre, puedes registrarlo de todos modos.
+                        </div>
+                        <Btn size="sm" variant="secondary" onClick={() => { setForzarDuplicado(true); setDupAviso(null) }}>
+                          Registrar de todos modos
+                        </Btn>
+                      </div>
+                    )}
                     <Input label="Fecha de nacimiento" type="date" value={bebe.fecha_nacimiento}
                       onChange={e => setBebe(b => ({...b, fecha_nacimiento: e.target.value}))} required />
                     <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
@@ -894,6 +978,33 @@ export default function BebesPage() {
               )}
             </>
           )}
+        </Card>
+      )}
+
+      {gruposDuplicados.length > 0 && (
+        <Card>
+          <div style={{ fontWeight:600, fontSize:'14px', marginBottom:'4px' }}>
+            ⚠️ Posibles bebés duplicados
+          </div>
+          <div style={{ fontSize:'12px', color:'var(--gray-400)', marginBottom:'12px' }}>
+            Estos bebés comparten el mismo nombre en el sistema. Toca uno para revisar si es el mismo bebé registrado dos veces.
+          </div>
+          {gruposDuplicados.map(g => (
+            <div key={g.nombre} style={{ borderTop:'1px solid var(--gray-100)', padding:'10px 0' }}>
+              <div style={{ fontWeight:600, fontSize:'13px', marginBottom:'6px' }}>
+                {g.nombre} · {g.cantidad} registros
+              </div>
+              {g.bebes.map(b => (
+                <div key={b.id} onClick={() => abrirBebe(b.id)}
+                  style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', cursor:'pointer' }}>
+                  <div style={{ fontSize:'12px' }}>
+                    Nacido: {fmtFecha(b.fecha_nacimiento)} · {b.local_id === 1 ? 'Villaflora' : 'Florida'} · {b.nombre_tutor}
+                  </div>
+                  <span style={{ fontSize:'12px', color:'var(--gray-400)' }}>→</span>
+                </div>
+              ))}
+            </div>
+          ))}
         </Card>
       )}
 

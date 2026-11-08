@@ -11,6 +11,9 @@ export const bebesAPI = {
   crear:      (data)           => api.post('/api/bebes', data),
   actualizar: (id, data)       => api.patch(`/api/bebes/${id}`, data),
   desactivar: (id)             => api.delete(`/api/bebes/${id}`),
+  // Duplicados: aviso al registrar (con nombre) y revisión de grupos (sin nombre).
+  verificarDuplicados: (nombre, fecha_nacimiento) => api.get('/api/bebes/duplicados', { params: { nombre, fecha_nacimiento } }),
+  listarDuplicados:    () => api.get('/api/bebes/duplicados'),
 }
 // PLANES
 export const planesAPI = {
