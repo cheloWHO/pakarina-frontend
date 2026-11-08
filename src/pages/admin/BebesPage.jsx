@@ -602,6 +602,7 @@ export default function BebesPage() {
   const [comprobanteSubido, setComprobanteSubido] = useState(false)
   // Aviso de duplicados al registrar (nombre normalizado, todas las sedes).
   const [dupAviso, setDupAviso] = useState(null)
+  const [edadAviso, setEdadAviso] = useState(null)
   const [dupVerificando, setDupVerificando] = useState(false)
   const [forzarDuplicado, setForzarDuplicado] = useState(false)
   const [gruposDuplicados, setGruposDuplicados] = useState([])
@@ -630,6 +631,7 @@ export default function BebesPage() {
     try {
       const { data } = await bebesAPI.obtener(id)
       setDupAviso(null)
+      setEdadAviso(null)
       setShowForm(false)
       setBebeDetalle(data)
     } catch (e) { console.error(e) }
@@ -640,22 +642,27 @@ export default function BebesPage() {
   // Aviso de duplicados mientras se escribe el nombre (pausa de 500 ms).
   // Se consulta al servidor porque el listado de esta pantalla solo trae
   // la sucursal del usuario y el duplicado puede estar en la otra sede.
+  // Se pasa también el correo y el WhatsApp: un nombre parecido con el
+  // mismo contacto es la señal fuerte de duplicado (el caso Ismael).
+  // La respuesta puede traer además una advertencia de edad (fecha fuera
+  // del rango de Pakarina, 45 días a 3 años).
   useEffect(() => {
     if (!showForm || success || paso !== 0) return
     const nombre = (bebe.nombre_completo || '').trim()
-    if (nombre.length < 3 || forzarDuplicado) { setDupAviso(null); return }
+    if (nombre.length < 3 || forzarDuplicado) { setDupAviso(null); setEdadAviso(null); return }
     setDupVerificando(true)
     const seq = ++dupSeq.current
     const t = setTimeout(async () => {
       try {
-        const { data } = await bebesAPI.verificarDuplicados(nombre, bebe.fecha_nacimiento || undefined)
+        const { data } = await bebesAPI.verificarDuplicados(nombre, bebe.fecha_nacimiento || undefined, bebe.email_representante || undefined, bebe.whatsapp_representante || undefined)
         if (seq !== dupSeq.current) return
         setDupAviso((data?.duplicados || []).length ? data.duplicados : null)
+        setEdadAviso(data?.advertencia_edad || null)
       } catch (e) { /* el servidor aún no tiene el endpoint: sin aviso */ }
       finally { if (seq === dupSeq.current) setDupVerificando(false) }
     }, 500)
     return () => clearTimeout(t)
-  }, [bebe.nombre_completo, bebe.fecha_nacimiento, showForm, paso, success, forzarDuplicado])
+  }, [bebe.nombre_completo, bebe.fecha_nacimiento, bebe.email_representante, bebe.whatsapp_representante, showForm, paso, success, forzarDuplicado])
 
   const srv      = SERVICIOS.find(s => s.id === srvId)
   // Pago en dos partes (solo Evaluación y Post Vacuna): el monto a cobrar
@@ -704,10 +711,13 @@ export default function BebesPage() {
       loadBebes()
     } catch (e) {
       const dups = e.response?.data?.duplicados
-      if (e.response?.status === 409 && dups?.length) {
-        // El servidor detectó un posible duplicado: volver al paso del
-        // bebé y mostrar el aviso con la opción de registrar de todos modos.
-        setDupAviso(dups)
+      const advEdad = e.response?.data?.advertencia_edad
+      if (e.response?.status === 409 && (dups?.length || advEdad)) {
+        // El servidor detectó un posible duplicado o una fecha fuera
+        // de rango: volver al paso del bebé y mostrar el aviso con la
+        // opción de registrar de todos modos.
+        setDupAviso(dups?.length ? dups : null)
+        setEdadAviso(advEdad || null)
         setForzarDuplicado(false)
         setPaso(0)
       } else {
@@ -721,7 +731,7 @@ export default function BebesPage() {
     setSrvId(null); setMetodo('efectivo'); setRef(''); setFechaInicio(''); setPaso(0)
     setCuentaId(null); setMontoInicial(''); setPagoIdCreado(null); setComprobanteSubido(false)
     setSuccess(null); setFormErr(''); setShowForm(false)
-    setDupAviso(null); setForzarDuplicado(false)
+    setDupAviso(null); setEdadAviso(null); setForzarDuplicado(false)
   }
 
   const paso0Valido = bebe.nombre_completo && bebe.fecha_nacimiento &&
@@ -807,28 +817,36 @@ export default function BebesPage() {
                         Buscando bebés con un nombre parecido…
                       </div>
                     )}
-                    {dupAviso && (
+                    {(dupAviso || edadAviso) && (
                       <div style={{ gridColumn:'1/-1', background:'var(--warn-light)', border:'1px solid var(--warn)', borderRadius:'var(--radius-sm)', padding:'12px' }}>
                         <div style={{ fontWeight:600, fontSize:'13px', color:'var(--warn)', marginBottom:'6px' }}>
-                          ⚠️ Ya existe un bebé parecido
+                          {dupAviso ? '⚠️ Ya existe un bebé parecido' : '⚠️ Revisa la fecha de nacimiento'}
                         </div>
-                        <div style={{ fontSize:'12px', color:'var(--gray-600)', marginBottom:'8px' }}>
-                          Revisa si es el mismo bebé antes de registrarlo de nuevo:
-                        </div>
-                        {dupAviso.map(d => (
+                        {edadAviso && (
+                          <div style={{ fontSize:'12px', color:'var(--gray-600)', marginBottom:'8px' }}>
+                            {edadAviso.mensaje}
+                          </div>
+                        )}
+                        {dupAviso && (
+                          <div style={{ fontSize:'12px', color:'var(--gray-600)', marginBottom:'8px' }}>
+                            Revisa si es el mismo bebé antes de registrarlo de nuevo:
+                          </div>
+                        )}
+                        {(dupAviso || []).map(d => (
                           <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:'8px', background:'#fff', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'8px 10px', marginBottom:'6px' }}>
                             <div style={{ fontSize:'12px' }}>
                               <strong>{d.nombre_completo}</strong>
                               <span style={{ color:'var(--gray-400)' }}> · Nacido: {fmtFecha(d.fecha_nacimiento)} · {d.local_id === 1 ? 'Villaflora' : 'Florida'}</span>
                               {d.misma_fecha && <span style={{ color:'var(--warn)', fontWeight:600 }}> · Misma fecha de nacimiento</span>}
+                              {d.motivo && <span style={{ color:'var(--warn)', fontWeight:600 }}> · {d.motivo.charAt(0).toUpperCase() + d.motivo.slice(1)}</span>}
                             </div>
                             <Btn size="sm" variant="ghost" onClick={() => abrirBebe(d.id)}>Ver bebé</Btn>
                           </div>
                         ))}
                         <div style={{ fontSize:'12px', color:'var(--gray-600)', marginBottom:'8px' }}>
-                          Si es otro bebé con el mismo nombre, puedes registrarlo de todos modos.
+                          {dupAviso ? 'Si es otro bebé con el mismo nombre, puedes registrarlo de todos modos.' : 'Si la fecha está bien, puedes registrarlo de todos modos.'}
                         </div>
-                        <Btn size="sm" variant="secondary" onClick={() => { setForzarDuplicado(true); setDupAviso(null) }}>
+                        <Btn size="sm" variant="secondary" onClick={() => { setForzarDuplicado(true); setDupAviso(null); setEdadAviso(null) }}>
                           Registrar de todos modos
                         </Btn>
                       </div>

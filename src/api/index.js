@@ -11,8 +11,8 @@ export const bebesAPI = {
   crear:      (data)           => api.post('/api/bebes', data),
   actualizar: (id, data)       => api.patch(`/api/bebes/${id}`, data),
   desactivar: (id)             => api.delete(`/api/bebes/${id}`),
-  // Duplicados: aviso al registrar (con nombre) y revisión de grupos (sin nombre).
-  verificarDuplicados: (nombre, fecha_nacimiento) => api.get('/api/bebes/duplicados', { params: { nombre, fecha_nacimiento } }),
+  // Duplicados: aviso al registrar (con nombre, correo y WhatsApp) y revisión de grupos (sin nombre).
+  verificarDuplicados: (nombre, fecha_nacimiento, email_representante, whatsapp_representante) => api.get('/api/bebes/duplicados', { params: { nombre, fecha_nacimiento, email_representante, whatsapp_representante } }),
   listarDuplicados:    () => api.get('/api/bebes/duplicados'),
 }
 // PLANES
