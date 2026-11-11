@@ -437,7 +437,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                   <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>
                     Inicio: {fmtFecha(p.fecha_inicio)} · Vence: {p.fecha_vencimiento ? fmtFecha(p.fecha_vencimiento) : 'Sin vigencia'}
                   </div>
-                  {p.estado === 'activo' && (
+                  {(p.estado_efectivo || p.estado) === 'activo' && (
                     planIdFecha === p.id ? (
                       <div style={{ display:'flex', gap:'8px', alignItems:'flex-end', marginTop:'8px' }}>
                         <div style={{ flex:1 }}>
@@ -455,7 +455,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                     )
                   )}
                 </div>
-                <Badge color={p.estado === 'activo' ? 'green' : 'gray'}>{p.estado}</Badge>
+                <Badge color={(p.estado_efectivo || p.estado) === 'activo' ? 'green' : 'gray'}>{p.estado_efectivo || p.estado}</Badge>
               </div>
               <div style={{ display:'flex', gap:'12px', fontSize:'13px', marginBottom:'10px' }}>
                 <span>Total: <strong>{p.clases_total}</strong></span>
@@ -468,7 +468,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                   <span>Pendiente: <strong style={{ color:'var(--warn)' }}>${Number(p.saldo_pendiente).toFixed(2)}</strong></span>
                 </div>
               )}
-              {p.estado === 'activo' && (
+              {(p.estado_efectivo || p.estado) === 'activo' && (
                 planIdExtra === p.id ? (
                   <div style={{ display:'flex', gap:'8px', alignItems:'flex-end' }}>
                     <div style={{ flex:1 }}>
