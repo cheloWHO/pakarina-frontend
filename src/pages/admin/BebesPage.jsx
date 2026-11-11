@@ -398,7 +398,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
               </div>
             )}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'12px' }}>
-              <Input label="Fecha de inicio (opcional)" type="date" value={nuevoPlanFecha}
+              <Input label="Primera clase agendada (opcional)" type="date" value={nuevoPlanFecha}
                 onChange={e => setNuevoPlanFecha(e.target.value)} />
               <Input label="Referencia (opcional)" value={nuevoPlanRef}
                 onChange={e => setNuevoPlanRef(e.target.value)} placeholder="TRF-001" />
@@ -435,7 +435,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 <div>
                   <div style={{ fontWeight:600, fontSize:'13px' }}>{p.servicio}</div>
                   <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>
-                    Inicio: {fmtFecha(p.fecha_inicio)} · Vence: {p.fecha_vencimiento ? fmtFecha(p.fecha_vencimiento) : 'Sin vigencia'}
+                    Inicio: {p.fecha_inicio ? fmtFecha(p.fecha_inicio) : 'Sin iniciar'} · Vence: {p.fecha_vencimiento ? fmtFecha(p.fecha_vencimiento) : 'Sin vigencia'}
                   </div>
                   {(p.estado_efectivo || p.estado) === 'activo' && (
                     planIdFecha === p.id ? (
@@ -1037,7 +1037,7 @@ export default function BebesPage() {
                       </div>
                     </>}
                   </div>
-                  <Input label="Fecha de inicio del plan (opcional — por defecto hoy)" type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} />
+                  <Input label="Primera clase agendada (opcional — si no, el plan empieza al tomar la primera clase)" type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} />
                   <Input label="Referencia de pago (opcional)" placeholder="TRF-001" value={ref} onChange={e => setRef(e.target.value)} />
                   {METODO_CON_CUENTA.includes(metodo) && (
                     <CuentaDestinoSelect value={cuentaId} onChange={setCuentaId} />
@@ -1065,7 +1065,7 @@ export default function BebesPage() {
                       ['Servicio',    srv?.nombre],
                       ['Clases',      srv?.clases + ' clases'],
                       ['Vigencia',    srv?.vigencia ? srv.vigencia + ' días' : 'Sin vigencia'],
-                      ['Inicio plan', fechaInicio || 'Hoy'],
+                      ['Inicio plan', fechaInicio || 'Al tomar la primera clase'],
                       ['Método',      METODO_LABEL[metodo]],
                       ['Cobrado',     '$' + montoACobrar.toFixed(2)],
                       ...(esParcialWizard ? [['Pendiente', '$' + saldoWizard.toFixed(2)]] : []),

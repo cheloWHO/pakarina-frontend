@@ -96,7 +96,7 @@ export default function PortalPage() {
             }} />
           </div>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', color:'var(--gray-400)' }}>
-            <span>Inicio: {fmtFecha(planActivo.fecha_inicio)}</span>
+            <span>Inicio: {planActivo.fecha_inicio ? fmtFecha(planActivo.fecha_inicio) : 'Sin iniciar'}</span>
             {planActivo.fecha_vencimiento && (
               <span>Vence: {fmtFecha(planActivo.fecha_vencimiento)}</span>
             )}
