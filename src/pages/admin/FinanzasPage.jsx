@@ -131,7 +131,6 @@ export default function FinanzasPage() {
                   onChange={e => setGasto(g => ({...g, local_id_form: e.target.value}))}>
                   <option value="">Seleccionar sucursal…</option>
                   <option value="1">Villaflora</option>
-                  <option value="2">Florida</option>
                   <option value="global">Global (ambas sucursales)</option>
                   </Select>
               )}

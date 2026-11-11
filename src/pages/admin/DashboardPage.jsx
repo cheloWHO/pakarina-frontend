@@ -93,7 +93,7 @@ export default function DashboardPage() {
         {esGlobal ? (
           <>
             <StatCard label="Planes activos Villaflora" value={planesVillaflora} color="green" />
-            <StatCard label="Planes activos Florida" value={planesFlorida} color="green" />
+            <StatCard label="Planes activos Florida (suspendida)" value={planesFlorida} color="green" />
             <StatCard label="Total planes activos" value={planesActivos} />
           </>
 ) : (

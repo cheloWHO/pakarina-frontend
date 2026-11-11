@@ -27,7 +27,6 @@ const PASO_LABELS = ['Bebé', 'Servicio', 'Pago', 'Confirmar']
 
 const LOCALES = [
   { id: 1, nombre: 'Villaflora (Sur)' },
-  { id: 2, nombre: 'Florida (Norte)' },
 ]
 
 // Métodos que llegan a una cuenta bancaria (los demás son efectivo o tarjeta)
