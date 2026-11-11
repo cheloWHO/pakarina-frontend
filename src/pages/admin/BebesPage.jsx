@@ -339,6 +339,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
           <div style={{ gridColumn:'1/-1' }}>
             <Select label="Sucursal" value={bebe.local_id || ''}
               onChange={e => setBebe(b => ({...b, local_id: e.target.value}))}>
+              {Number(bebe.local_id) === 2 && <option value={2} disabled>Florida (Norte) — suspendida</option>}
               {LOCALES.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
             </Select>
           </div>
