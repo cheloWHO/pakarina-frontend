@@ -21,6 +21,7 @@ export const planesAPI = {
   obtener:       (id)               => api.get(`/api/planes/${id}`),
   registrarPago: (data)             => api.post('/api/planes', data),
   registrarAbono:(id, data)        => api.post(`/api/planes/${id}/pagos`, data),
+  listarPagos:   (id)               => api.get(`/api/planes/${id}/pagos`),
   agregarClases: (id, clases_extra) => api.patch(`/api/planes/${id}/agregar-clases`, { clases_extra }),
   editarFecha:   (id, fecha_inicio) => api.patch(`/api/planes/${id}`, { fecha_inicio }),
 }
@@ -47,6 +48,8 @@ export const finanzasAPI = {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 30000,
   }),
+  listarComprobantes:(params) => api.get('/api/finanzas/comprobantes', { params }),
+  obtenerComprobante:(id)     => api.get(`/api/finanzas/comprobantes/${id}`),
 }
 // SERVICIOS (catálogo)
 export const serviciosAPI = {

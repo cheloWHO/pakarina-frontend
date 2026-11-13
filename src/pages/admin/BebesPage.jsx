@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import CuentaDestinoSelect from '../../components/CuentaDestinoSelect'
 import ComprobanteUploader from '../../components/ComprobanteUploader'
 import { Card, Btn, Input, Select, Badge, Spinner, Alert, Empty } from '../../components/ui'
-import { fmtFecha, edadMeses, METODO_LABEL, TIPO_CLASE_LABEL } from '../../utils'
+import { fmtFecha, fmtMoney, edadMeses, METODO_LABEL, TIPO_CLASE_LABEL } from '../../utils'
 
 const SERVICIOS = [
   { id:1, nombre:'Clase Post Vacuna',  precio:12,  clases:1,  vigencia:0 },
@@ -61,6 +61,83 @@ async function verificarPrecios() {
   } catch (e) { /* endpoint aún no publicado */ }
 }
 
+// Pagos de un plan con sus fotos de comprobante: cada pago muestra monto,
+// fecha y método, las fotos que tiene guardadas (clic para verla grande)
+// y un botón para agregar más fotos a ese pago, aunque el plan ya esté
+// pagado por completo. Si el servidor todavía no tiene esta función, la
+// sección simplemente no aparece.
+function PagosDelPlan({ planId, refreshKey }) {
+  const [pagos, setPagos] = useState(null)
+  const [pagoFotos, setPagoFotos] = useState(null) // pago_id con el uploader abierto
+  const [vista, setVista] = useState(null) // { src, nombre } foto en grande
+  const [cargandoVista, setCargandoVista] = useState(false)
+
+  function cargar() {
+    planesAPI.listarPagos(planId)
+      .then(r => setPagos(r.data))
+      .catch(() => setPagos([]))
+  }
+  useEffect(() => { cargar() }, [planId, refreshKey])
+
+  async function verFoto(comp) {
+    setCargandoVista(true)
+    try {
+      const r = await finanzasAPI.obtenerComprobante(comp.id)
+      if (r.data?.imagen_base64) {
+        setVista({ src: `data:${r.data.mime_type};base64,${r.data.imagen_base64}`, nombre: r.data.nombre_archivo || 'Comprobante' })
+      }
+    } catch (e) { console.error(e) } finally { setCargandoVista(false) }
+  }
+
+  if (!pagos || pagos.length === 0) return null
+  return (
+    <div style={{ background: 'var(--gray-100)', borderRadius: 'var(--radius-sm)', padding: '10px', marginBottom: '10px' }}>
+      <div style={{ fontWeight: 600, fontSize: '12px', marginBottom: '8px', color: 'var(--gray-600)' }}>Pagos y comprobantes</div>
+      {pagos.map(pg => (
+        <div key={pg.id} style={{ marginBottom: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '13px' }}>
+              <strong>{fmtMoney(pg.monto_cobrado)}</strong>
+              {' · '}{fmtFecha(pg.fecha_pago)}
+              {' · '}{METODO_LABEL[pg.metodo_pago] || pg.metodo_pago}
+              {pg.referencia ? ` · Ref: ${pg.referencia}` : ''}
+            </div>
+            <Btn size="sm" variant="ghost" onClick={() => setPagoFotos(pagoFotos === pg.id ? null : pg.id)}>
+              {pagoFotos === pg.id ? 'Cerrar' : '＋ Agregar fotos'}
+            </Btn>
+          </div>
+          {pg.comprobantes.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+              {pg.comprobantes.map(c => (
+                <Btn key={c.id} size="sm" variant="secondary" onClick={() => verFoto(c)} loading={cargandoVista}>
+                  📷 {c.nombre_archivo || `Foto ${c.id}`}
+                </Btn>
+              ))}
+            </div>
+          )}
+          {pg.comprobantes.length === 0 && (
+            <div style={{ fontSize: '12px', color: 'var(--gray-400)', marginTop: '4px' }}>Sin fotos de comprobante.</div>
+          )}
+          {pagoFotos === pg.id && (
+            <ComprobanteUploader pagoId={pg.id} onSubido={() => { setPagoFotos(null); cargar() }} />
+          )}
+        </div>
+      ))}
+      {vista && (
+        <div onClick={() => setVista(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 'var(--radius-sm)', padding: '12px', maxWidth: '520px', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600 }}>{vista.nombre}</div>
+              <Btn size="sm" variant="ghost" onClick={() => setVista(null)}>Cerrar</Btn>
+            </div>
+            <img src={vista.src} alt={vista.nombre} style={{ width: '100%', borderRadius: 'var(--radius-sm)' }} />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [bebe,        setBebe]        = useState({ ...bebeInicial })
   const [planes,      setPlanes]      = useState([])
@@ -92,6 +169,8 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [fechaNacExactaPlan, setFechaNacExactaPlan] = useState('')
   const [ultimoPagoId, setUltimoPagoId] = useState(null)
   const [comprobanteSubido, setComprobanteSubido] = useState(false)
+  // Recarga la lista de pagos y comprobantes cuando se registra un pago nuevo.
+  const [pagosRefresh, setPagosRefresh] = useState(0)
   // Pago restante (segunda mitad de Evaluación / Post Vacuna)
   const [planIdAbono, setPlanIdAbono] = useState(null)
   const [abonoMonto, setAbonoMonto] = useState('')
@@ -237,6 +316,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       setPlanes(fresh.data)
       setPlanIdAbono(null); setAbonoMonto(''); setAbonoRef(''); setAbonoCuentaId(null)
       setUltimoPagoId(res.data?.pago_id || null)
+      setPagosRefresh(k => k + 1)
       setComprobanteSubido(false)
       const restante = res.data?.saldo_pendiente || 0
       setMsg({ type: 'ok', text: `Pago de $${monto.toFixed(2)} registrado. ${restante > 0 ? `Quedan pendientes $${restante.toFixed(2)}.` : 'Plan pagado por completo.'}` })
@@ -286,6 +366,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       if (bebe.fecha_nacimiento_aprox && fechaNacExactaPlan) setBebe(b => ({...b, fecha_nacimiento: fechaNacExactaPlan, fecha_nacimiento_aprox: 0}))
       setFechaNacExactaPlan('')
       setUltimoPagoId(res.data?.pago_id || null)
+      setPagosRefresh(k => k + 1)
       setComprobanteSubido(false)
       setMsg({ type: 'ok', text: 'Plan registrado correctamente' })
     } catch (e) {
@@ -468,6 +549,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                   <span>Pendiente: <strong style={{ color:'var(--warn)' }}>${Number(p.saldo_pendiente).toFixed(2)}</strong></span>
                 </div>
               )}
+              <PagosDelPlan planId={p.id} refreshKey={pagosRefresh} />
               {(p.estado_efectivo || p.estado) === 'activo' && (
                 planIdExtra === p.id ? (
                   <div style={{ display:'flex', gap:'8px', alignItems:'flex-end' }}>
@@ -786,12 +868,16 @@ export default function BebesPage() {
     else setBebe(b => ({...b, edad_meses: ''}))
   }
 
-  // Búsqueda por nombre: insensible a mayúsculas y tildes, combinada
-  // con el filtro de sede.
+  // Búsqueda por partes: cada palabra escrita debe aparecer en el nombre
+  // del bebé, de su representante, el correo o el WhatsApp, sin importar
+  // el orden ni las tildes. Así "Noah Rodriguez" encuentra a
+  // "Noah Ezequiel Rodríguez Caillagua" sin escribir el nombre completo.
   const sinTildes = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const palabrasBusqueda = sinTildes(busquedaNombre.trim()).split(/\s+/).filter(Boolean)
+  const textoBuscable = b => [b.nombre_completo, b.nombre_tutor, b.email_representante, b.whatsapp_representante].map(sinTildes).join(' ')
   const bebesFiltrados = bebes.filter(b => {
     const porLocal = !filtroLocal || b.local_id === parseInt(filtroLocal)
-    const porNombre = !busquedaNombre.trim() || sinTildes(b.nombre_completo).includes(sinTildes(busquedaNombre.trim()))
+    const porNombre = palabrasBusqueda.length === 0 || palabrasBusqueda.every(p => textoBuscable(b).includes(p))
     return porLocal && porNombre
   })
 
@@ -819,7 +905,7 @@ export default function BebesPage() {
           <input
             value={busquedaNombre}
             onChange={e => setBusquedaNombre(e.target.value)}
-            placeholder="Buscar por nombre…"
+            placeholder="Buscar por nombre o representante…"
             style={{ height:'36px', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'0 10px', fontSize:'13px', width:'190px' }}
           />
           {esGlobal && (
