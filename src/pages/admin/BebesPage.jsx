@@ -161,6 +161,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const [nuevoPlanRef,    setNuevoPlanRef]    = useState('')
   const [nuevoPlanFecha,  setNuevoPlanFecha]  = useState('')
   const [nuevoPlanMonto,  setNuevoPlanMonto]  = useState('')
+  const [nuevoPlanDescuento, setNuevoPlanDescuento] = useState('0')
   // NOTA: no borrar esta línea: el botón "Registrar plan" la usa
   // (loading={savingNuevoPlan}). Sin ella el formulario deja la app en
   // blanco al abrirse (ReferenceError, 2026-11-07).
@@ -272,14 +273,32 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
   const srvNuevo = SERVICIOS.find(s => s.id === nuevoPlanSrvId)
   const esParcialNuevo = !!(srvNuevo && SERVICIOS_PARCIALES.includes(srvNuevo.id))
   const montoNuevoNum = parseFloat(nuevoPlanMonto)
+  // Descuento (igual que en productos): monto en $ que se resta del precio
+  // de catálogo. El total a cobrar es el precio ya descontado.
+  const descuentoNuevoNum = parseFloat((nuevoPlanDescuento || '0').replace(',', '.'))
+  const descuentoNuevo = Number.isNaN(descuentoNuevoNum) ? 0 : Math.max(0, descuentoNuevoNum)
+  const precioConDescNuevo = srvNuevo ? Math.max(0, parseFloat((srvNuevo.precio - descuentoNuevo).toFixed(2))) : 0
+  const descuentoPctNuevo = srvNuevo && srvNuevo.precio > 0 && descuentoNuevo > 0 ? parseFloat(((descuentoNuevo / srvNuevo.precio) * 100).toFixed(2)) : 0
   const saldoNuevo = esParcialNuevo
-    ? Math.max(0, parseFloat((srvNuevo.precio - (Number.isNaN(montoNuevoNum) ? 0 : montoNuevoNum)).toFixed(2)))
+    ? Math.max(0, parseFloat((precioConDescNuevo - (Number.isNaN(montoNuevoNum) ? 0 : montoNuevoNum)).toFixed(2)))
     : null
 
   function elegirServicioNuevoPlan(s) {
     setNuevoPlanSrvId(s.id)
+    setNuevoPlanDescuento('0')
     // Para Evaluación y Post Vacuna el pago inicial es la mitad por defecto.
     setNuevoPlanMonto(SERVICIOS_PARCIALES.includes(s.id) ? (s.precio / 2).toFixed(2) : '')
+  }
+
+  function cambiarDescuentoNuevo(v) {
+    const val = v.replace(',', '.')
+    setNuevoPlanDescuento(val)
+    // El pago inicial por defecto es la mitad del total ya descontado.
+    if (srvNuevo && SERVICIOS_PARCIALES.includes(srvNuevo.id)) {
+      const d = parseFloat(val)
+      const desc = Number.isNaN(d) ? 0 : Math.max(0, d)
+      setNuevoPlanMonto((Math.max(0, srvNuevo.precio - desc) / 2).toFixed(2))
+    }
   }
 
   function abrirAbono(p) {
@@ -336,10 +355,14 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       setMsg({ type: 'error', text: 'Para tomar un plan ingresa la fecha de nacimiento exacta del bebé.' })
       return
     }
+    if (descuentoNuevo >= srvNuevo.precio) {
+      setMsg({ type: 'error', text: 'El descuento debe ser menor al precio del servicio' })
+      return
+    }
     if (esParcialNuevo) {
       const m = parseFloat(nuevoPlanMonto)
-      if (Number.isNaN(m) || m <= 0 || m > srvNuevo.precio) {
-        setMsg({ type: 'error', text: `El monto a pagar ahora debe ser mayor a $0 y no mayor a $${srvNuevo.precio.toFixed(2)}` })
+      if (Number.isNaN(m) || m <= 0 || m > precioConDescNuevo) {
+        setMsg({ type: 'error', text: `El monto a pagar ahora debe ser mayor a $0 y no mayor a $${precioConDescNuevo.toFixed(2)}` })
         return
       }
     }
@@ -356,6 +379,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
         fecha_inicio:  nuevoPlanFecha || null,
         fecha_nacimiento: bebe.fecha_nacimiento_aprox ? (fechaNacExactaPlan || undefined) : undefined,
         monto_inicial: esParcialNuevo && nuevoPlanMonto !== '' ? parseFloat(nuevoPlanMonto) : undefined,
+        descuento: descuentoNuevo > 0 ? descuentoNuevo : undefined,
       })
       const fresh = await planesAPI.listar({ bebe_id: bebeInicial.id })
       setPlanes(fresh.data)
@@ -363,6 +387,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
       setNuevoPlanSrvId(null); setNuevoPlanMetodo('efectivo')
       setNuevoPlanRef(''); setNuevoPlanFecha(''); setNuevoPlanCuentaId(null)
       setNuevoPlanMonto('')
+      setNuevoPlanDescuento('0')
       if (bebe.fecha_nacimiento_aprox && fechaNacExactaPlan) setBebe(b => ({...b, fecha_nacimiento: fechaNacExactaPlan, fecha_nacimiento_aprox: 0}))
       setFechaNacExactaPlan('')
       setUltimoPagoId(res.data?.pago_id || null)
@@ -457,6 +482,20 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 </div>
               ))}
             </div>
+            {srvNuevo && (
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'12px' }}>
+                <Input label="Descuento ($)" type="text" inputMode="decimal"
+                  value={nuevoPlanDescuento}
+                  onChange={e => cambiarDescuentoNuevo(e.target.value)} />
+                <div style={{ fontSize:'12px', color:'var(--gray-600)', display:'flex', alignItems:'center' }}>
+                  {descuentoNuevo > 0 ? (
+                    <span>Precio ${srvNuevo.precio.toFixed(2)} · Descuento ({descuentoPctNuevo}%) -${descuentoNuevo.toFixed(2)} · <strong>Total ${precioConDescNuevo.toFixed(2)}</strong></span>
+                  ) : (
+                    <span>Total a cobrar <strong>${precioConDescNuevo.toFixed(2)}</strong></span>
+                  )}
+                </div>
+              </div>
+            )}
             <div style={{ display:'flex', flexWrap:'wrap', gap:'8px', marginBottom:'12px' }}>
               {Object.entries(METODO_LABEL).map(([key, label]) => (
                 <div key={key} onClick={() => setNuevoPlanMetodo(key)}
@@ -471,7 +510,7 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                   value={nuevoPlanMonto}
                   onChange={e => setNuevoPlanMonto(e.target.value.replace(',', '.'))} />
                 <div style={{ fontSize:'12px', color:'var(--gray-600)', marginTop:'6px' }}>
-                  Total ${srvNuevo.precio.toFixed(2)} · Pagas ahora ${Number.isNaN(montoNuevoNum) ? '0.00' : montoNuevoNum.toFixed(2)} · Queda pendiente ${saldoNuevo !== null ? saldoNuevo.toFixed(2) : '0.00'}
+                  Total ${precioConDescNuevo.toFixed(2)} · Pagas ahora ${Number.isNaN(montoNuevoNum) ? '0.00' : montoNuevoNum.toFixed(2)} · Queda pendiente ${saldoNuevo !== null ? saldoNuevo.toFixed(2) : '0.00'}
                 </div>
                 <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>
                   Evaluación y Post Vacuna se pagan en dos partes: la otra mitad se paga el día de la clase.
@@ -543,6 +582,12 @@ function BebeDetalle({ bebe: bebeInicial, grupos, onBack, onSaved }) {
                 <span>Usadas: <strong>{p.clases_usadas}</strong></span>
                 <span>Restantes: <strong style={{ color:'var(--brand-dark)' }}>{p.clases_restantes}</strong></span>
               </div>
+              {p.precio_venta != null && p.precio_catalogo != null && Number(p.precio_venta) < Number(p.precio_catalogo) && (
+                <div style={{ fontSize:'13px', marginBottom:'10px' }}>
+                  <span>Precio con descuento: <strong>${Number(p.precio_venta).toFixed(2)}</strong></span>
+                  <span style={{ color:'var(--gray-400)' }}> (catálogo ${Number(p.precio_catalogo).toFixed(2)} · descuento ${(Number(p.precio_catalogo) - Number(p.precio_venta)).toFixed(2)})</span>
+                </div>
+              )}
               {p.saldo_pendiente > 0 && (
                 <div style={{ display:'flex', gap:'12px', fontSize:'13px', marginBottom:'10px' }}>
                   <span>Pagado: <strong>${Number(p.total_pagado || 0).toFixed(2)}</strong></span>
@@ -707,6 +752,7 @@ export default function BebesPage() {
   const [fechaInicio, setFechaInicio] = useState('')
   const [cuentaId,    setCuentaId]    = useState(null)
   const [montoInicial, setMontoInicial] = useState('')
+  const [descuentoWizard, setDescuentoWizard] = useState('0')
   const [pagoIdCreado, setPagoIdCreado] = useState(null)
   const [comprobanteSubido, setComprobanteSubido] = useState(false)
   // Aviso de duplicados al registrar (nombre normalizado, todas las sedes).
@@ -782,8 +828,14 @@ export default function BebesPage() {
   // ahora es la mitad por defecto y el resto queda pendiente del plan.
   const esParcialWizard = !!(srv && SERVICIOS_PARCIALES.includes(srv.id))
   const montoInicialNum = parseFloat(montoInicial)
-  const montoACobrar = esParcialWizard ? (Number.isNaN(montoInicialNum) ? 0 : montoInicialNum) : (srv ? srv.precio : 0)
-  const saldoWizard = esParcialWizard && srv ? Math.max(0, parseFloat((srv.precio - montoACobrar).toFixed(2))) : 0
+  // Descuento (igual que en productos): monto en $ que se resta del precio
+  // de catálogo. El total a cobrar es el precio ya descontado.
+  const descuentoWNum = parseFloat((descuentoWizard || '0').replace(',', '.'))
+  const descuentoW = Number.isNaN(descuentoWNum) ? 0 : Math.max(0, descuentoWNum)
+  const precioConDescW = srv ? Math.max(0, parseFloat((srv.precio - descuentoW).toFixed(2))) : 0
+  const descuentoPctW = srv && srv.precio > 0 && descuentoW > 0 ? parseFloat(((descuentoW / srv.precio) * 100).toFixed(2)) : 0
+  const montoACobrar = esParcialWizard ? (Number.isNaN(montoInicialNum) ? 0 : montoInicialNum) : precioConDescW
+  const saldoWizard = esParcialWizard && srv ? Math.max(0, parseFloat((precioConDescW - montoACobrar).toFixed(2))) : 0
   const comision = metodo === 'tarjeta' && srv ? parseFloat((montoACobrar * 0.06).toFixed(2)) : 0
   const neto     = srv ? parseFloat((montoACobrar - comision).toFixed(2)) : 0
   const localIdFinal = esGlobal ? parseInt(bebe.local_id_form) : localId
@@ -794,14 +846,30 @@ export default function BebesPage() {
 
   function elegirServicioWizard(s) {
     setSrvId(s.id)
+    setDescuentoWizard('0')
     setMontoInicial(SERVICIOS_PARCIALES.includes(s.id) ? (s.precio / 2).toFixed(2) : '')
   }
 
+  function cambiarDescuentoWizard(v) {
+    const val = v.replace(',', '.')
+    setDescuentoWizard(val)
+    // El pago inicial por defecto es la mitad del total ya descontado.
+    if (srv && SERVICIOS_PARCIALES.includes(srv.id)) {
+      const d = parseFloat(val)
+      const desc = Number.isNaN(d) ? 0 : Math.max(0, d)
+      setMontoInicial((Math.max(0, srv.precio - desc) / 2).toFixed(2))
+    }
+  }
+
   async function handleRegistrar() {
+    if (srv && descuentoW >= srv.precio) {
+      setFormErr('El descuento debe ser menor al precio del servicio')
+      return
+    }
     if (esParcialWizard) {
       const m = parseFloat(montoInicial)
-      if (Number.isNaN(m) || m <= 0 || m > srv.precio) {
-        setFormErr(`El monto a pagar ahora debe ser mayor a $0 y no mayor a $${srv.precio.toFixed(2)}`)
+      if (Number.isNaN(m) || m <= 0 || m > precioConDescW) {
+        setFormErr(`El monto a pagar ahora debe ser mayor a $0 y no mayor a $${precioConDescW.toFixed(2)}`)
         return
       }
     }
@@ -819,6 +887,7 @@ export default function BebesPage() {
         referencia: ref || null, fecha_inicio: fechaInicio || null,
         fecha_nacimiento: (esPlanWizard && soloMeses) ? fechaNacExacta : undefined,
         monto_inicial: esParcialWizard && montoInicial !== '' ? parseFloat(montoInicial) : undefined,
+        descuento: descuentoW > 0 ? descuentoW : undefined,
       })
       setPagoIdCreado(pRes.data?.pago_id || null)
       setComprobanteSubido(false)
@@ -847,7 +916,7 @@ export default function BebesPage() {
   function resetForm() {
     setBebe({ nombre_completo:'', fecha_nacimiento:'', edad_meses:'', grupo_id:'', email_representante:'', whatsapp_representante:'', nombre_tutor:'', local_id_form: localId || '' })
     setSrvId(null); setMetodo('efectivo'); setRef(''); setFechaInicio(''); setPaso(0)
-    setCuentaId(null); setMontoInicial(''); setPagoIdCreado(null); setComprobanteSubido(false)
+    setCuentaId(null); setMontoInicial(''); setDescuentoWizard('0'); setPagoIdCreado(null); setComprobanteSubido(false)
     setSuccess(null); setFormErr(''); setShowForm(false)
     setDupAviso(null); setEdadAviso(null); setForzarDuplicado(false)
     setSoloMeses(false); setFechaNacExacta('')
@@ -1092,13 +1161,25 @@ export default function BebesPage() {
                       </div>
                     ))}
                   </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+                    <Input label="Descuento ($)" type="text" inputMode="decimal"
+                      value={descuentoWizard}
+                      onChange={e => cambiarDescuentoWizard(e.target.value)} />
+                    <div style={{ fontSize:'12px', color:'var(--gray-600)', display:'flex', alignItems:'center' }}>
+                      {descuentoW > 0 ? (
+                        <span>Precio ${srv?.precio.toFixed(2)} · Descuento ({descuentoPctW}%) -${descuentoW.toFixed(2)} · <strong>Total ${precioConDescW.toFixed(2)}</strong></span>
+                      ) : (
+                        <span>Total a cobrar <strong>${precioConDescW.toFixed(2)}</strong></span>
+                      )}
+                    </div>
+                  </div>
                   {esParcialWizard && (
                     <div style={{ background:'#fff', border:'1px solid var(--gray-200)', borderRadius:'var(--radius-sm)', padding:'10px' }}>
                       <Input label="Monto a pagar ahora ($)" type="text" inputMode="decimal"
                         value={montoInicial}
                         onChange={e => setMontoInicial(e.target.value.replace(',', '.'))} />
                       <div style={{ fontSize:'12px', color:'var(--gray-600)', marginTop:'6px' }}>
-                        Total ${srv?.precio.toFixed(2)} · Pagas ahora ${montoACobrar.toFixed(2)} · Queda pendiente ${saldoWizard.toFixed(2)}
+                        Total ${precioConDescW.toFixed(2)} · Pagas ahora ${montoACobrar.toFixed(2)} · Queda pendiente ${saldoWizard.toFixed(2)}
                       </div>
                       <div style={{ fontSize:'11px', color:'var(--gray-400)', marginTop:'2px' }}>
                         Evaluación y Post Vacuna se pagan en dos partes: la otra mitad se paga el día de la clase.
@@ -1106,6 +1187,14 @@ export default function BebesPage() {
                     </div>
                   )}
                   <div style={{ background:'var(--gray-100)', borderRadius:'var(--radius-sm)', padding:'12px' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0', color:'var(--gray-600)' }}>
+                      <span>Precio de catálogo</span><span>${srv?.precio.toFixed(2)}</span>
+                    </div>
+                    {descuentoW > 0 && (
+                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0', color:'var(--gray-600)' }}>
+                        <span>Descuento ({descuentoPctW}%)</span><span>-${descuentoW.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'3px 0', color:'var(--gray-600)' }}>
                       <span>Monto cobrado al cliente</span><span>${montoACobrar.toFixed(2)}</span>
                     </div>
